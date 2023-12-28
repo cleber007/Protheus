@@ -1,0 +1,11 @@
+//https://tdn.totvs.com/display/public/PROT/DT_F050MCP_Adiciona_campos_na_alteracao_do_Contas_a_pagar
+#Include 'Protheus.ch'
+
+User Function F050MCP()
+Local aCampos := paramixb
+
+AADD(aCampos,"E2_CCD")	
+AADD(aCampos,"E2_VENCTO")	
+AADD(aCampos,"E2_VENCREA")	
+
+Return aCampos

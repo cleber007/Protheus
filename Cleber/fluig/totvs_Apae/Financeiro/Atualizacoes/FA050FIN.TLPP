@@ -1,0 +1,22 @@
+#include "totvs.ch"
+
+User Function FA050FIN()
+	Local lRet  as logical
+	Local aArea as array
+
+	aArea := GetArea()
+	lRet := .T.
+
+	If IsBlind()
+		Return(.t.)
+	EndIf
+
+	iF !SE2->E2_PREFIXO == "PRJ"
+		While MsgYesNo("Deseja incluir anexo para: " + ALLTRIM(SE2->E2_NOMFOR) + "?","Documento" )
+			U_BancoConhecimentoCuston( "SE2", SE2->(Recno()) , 1 )
+		EndDo
+	EndIf
+
+	RestArea(aArea)
+
+Return lRet

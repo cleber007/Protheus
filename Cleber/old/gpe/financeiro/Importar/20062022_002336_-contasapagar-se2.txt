@@ -1,0 +1,32 @@
+#########  IMPORTACAO DE DADOS #############
+ >> Data inicio: 20/06/2022
+ >> Hora inicio: 00:23:37
+ >> Entidade: - Contas a Pagar - SE2
+--------------------------------------------
+Registro: 1
+Erro: ExecAuto.
+AJUDA:OBRIGAT   
+Um ou mais campos obrigatórios não foram preenchidos. xxxxxxxxxxxxxxxxxx -> xxxxxxxxxx
+Historico
+
+Falha na gravação automática do Titulo!
+
+Registro: 2
+Erro: ExecAuto.
+AJUDA:OBRIGAT   
+Um ou mais campos obrigatórios não foram preenchidos. xxxxxxxxxxxxxxxxxx -> xxxxxxxxxx
+Historico
+
+Falha na gravação automática do Titulo!
+
+Registro: 3
+Erro: ExecAuto.
+AJUDA:OBRIGAT   
+Um ou mais campos obrigatórios não foram preenchidos. xxxxxxxxxxxxxxxxxx -> xxxxxxxxxx
+Historico
+
+Falha na gravação automática do Titulo!
+
+--------------------------------------------
+ >> Data fim: 20/06/2022
+ >> Hora fim: 00:23:42

@@ -1,0 +1,4 @@
+User Function FA050UPD()
+	Local lRet := .T.
+
+Return(lRet)

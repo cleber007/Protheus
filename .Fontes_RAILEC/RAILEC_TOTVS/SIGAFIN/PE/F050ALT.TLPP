@@ -1,0 +1,53 @@
+#Include "Totvs.ch"
+/*/{Protheus.doc} F050ALT
+    Utilizado para atualizar a data dos impostos.
+    
+    @type  Function
+    @author Jean Rocha - jn_rocha@outlook.com
+    @since 30/10/2023
+    @version P12.1.2210
+    @return logical, lRet
+    @see https://tdn.totvs.com/pages/releaseview.action?pageId=6070876
+    01A  003645359 NF 37912201
+    /*/
+User Function F050ALT()
+	
+	Local aArea    := FWGetArea()
+	Local aAreaSE2 := SE2->(FWGetArea())
+	//Local cOpca := PARAMIXB[1]
+
+	cPreOr := SE2->E2_PREFIXO
+	cNumOr := SE2->E2_NUM
+	cParOr := SE2->E2_PARCELA
+	cTipOr := SE2->E2_TIPO
+	cForOr := SE2->E2_FORNECE
+	cLojOr := SE2->E2_LOJA
+
+	dVenctoNew := Lastday(SE2->E2_VENCTO) + 20
+	cTITPAI := cPreOr + cNumOr + cParOr + cTipOr + cForOr + cLojOr
+
+	DBSelectArea("SE2")
+	DBSetOrder(17)
+	DBSeek(xFilial("SE2") + cTITPAI)
+	while !Eof() .and. Alltrim(SE2->E2_TITPAI) == Alltrim(cTITPAI)
+
+		If Alltrim(SE2->E2_TIPO) <> 'TX' .OR. EMPTY(SE2->E2_BAIXA) == .F.
+			DBSelectArea("SE2")
+			DBSKIP()
+			LOOP
+		ENDIF
+
+		RECLOCK( "SE2", .F. )
+		SE2->E2_VENCTO := dVenctoNew
+		SE2->E2_VENCREA := dVenctoNew
+		SE2->(MSUNLOCK())
+
+		DBSelectArea("SE2")
+		DBSKIP()
+
+	EndDo
+
+	FWRestArea(aAreaSE2)
+	FWRestArea(aArea)
+
+Return 

@@ -1,0 +1,532 @@
+#INCLUDE "UGPER400.CH"
+#INCLUDE "report.ch"
+#INCLUDE "RWMAKE.CH"
+/*
+эээээээээээээээээээээээээээээээээээээээээээээээээээээээээээээээээээээээээээээ
+╠╠зддддддддддбддддддддддбдддддддбдддддддддддддддддддддддбддддддбдддддддддд©╠╠
+╠╠ЁFun┤┘o    Ё GPER400  Ё Autor Ё R.H. - Marcos StiefanoЁ Data Ё 25.05.96 Ё╠╠
+╠╠цддддддддддеддддддддддадддддддадддддддддддддддддддддддаддддддадддддддддд╢╠╠
+╠╠ЁDescri┤┘o Ё Relacao de Programacao de Ferias                           Ё╠╠
+╠╠цддддддддддедддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд╢╠╠
+╠╠ЁSintaxe   Ё GPER400(void)                                              Ё╠╠
+╠╠цддддддддддедддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд╢╠╠
+╠╠ЁParametrosЁ                                                            Ё╠╠
+╠╠цддддддддддедддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд╢╠╠
+╠╠Ё Uso      Ё ADAPTACAO JOSE MACEDO PARA ALUBAR .. ODEM DE FUNCAO 25/11/11Ё╠╠
+╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠
+ъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъ*/
+USER Function UGPER400()
+//здддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд©
+//Ё Define Variaveis Locais (Basicas)                            Ё
+//юдддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддды
+Local cString := "SRA"        // alias do arquivo principal (Base)
+Local aOrd    := {STR0001,STR0002,STR0016,STR0017,STR0018,STR0019}//"Centro de Custo"###"Matricula"###"Nome"###"C.Custo + Nome"###"Filial + Dt.Base"###"Filial + Dt.Inicio"
+Local cDesc1  := STR0003	//"Rela┤└o de Programa┤└o de F┌rias."
+Local cDesc2  := STR0004	//"Ser═ impresso de acordo com os parametros solicitados pelo"
+Local cDesc3  := STR0005	//"usuario."
+Local aRegs
+//здддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд©
+//Ё Define Variaveis Private(Basicas)                            Ё
+//юдддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддды
+Private aReturn  := {STR0006,1,STR0007,2,2,1,"",1 }	//"Zebrado"###"Administra┤└o"
+Private NomeProg := "GPER400"
+Private aLinha   := { }
+Private nLastKey := 0
+Private cPerg    := "GPR400"
+Private cIndCond
+
+//здддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд©
+//Ё Variaveis Utilizadas na funcao IMPR                          Ё
+//юдддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддды
+Private Titulo   := STR0008	//
+Private AT_PRG   := "GPER400"
+Private Wcabec0  := 2
+Private Wcabec1  := STR0009	//"                                                                       DATA       DTA.BASE           P E R I O D O         DT.LIMITE    DT.LIMITE     FERIAS    FALTAS     FERIAS     FALTAS     TOTAL    1a PARCELA 13o"
+Private Wcabec2  := STR0010	//"FIL   CENTRO DE CUSTO   MATRICULA   NOME FUNCIONARIO                 ADMISSAO      FERIAS         A Q U I S I T I V O        IDEAL        MAXIMA     VENCIDAS   VENCIDAS   PROPORC.   PROPROC.   FERIAS        %%"
+Private CONTFL   := 1
+Private LI       := 0
+Private nTamanho := "G"
+
+/*
+                                                                 DATA       DTA.BASE       P E R I O D O       DT.LIMITE   DT.LIMITE     FERIAS    FALTAS    FERIAS    FALTAS   TOTAL   13o SAL.
+ FIL   CENTRO CUSTO   MAT.     NOME DO FUNCIONARIO              ADMISSAO     FERIAS     A Q U I S I T I V O      IDEAL       MAXIMA     VENCIDAS  VENCIDAS  PROPORC.  PROPROC.  FERIAS   PERC.    ASSINATURA DO FUNCIONARIO
+ --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*
+          
+ ***************************************************************************************************************************************************************************************************************************
+ 01    123456789      123456   123456789012345678901234567890  99/99/9999  99/99/9999  99/99/9999  99/99/9999  99/99/9999  99/99/9999    999.9     999.9     999.9     999.9     999.9    99.99
+ ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                       1a -  P R O G R A M A C A O  D E  F E R I A S ______/______/______  A  ______/______/______  D.FER.|______|D.AB.|______|  ___________________________
+                                                                       2a -  P R O G R A M A C A O  D E  F E R I A S ______/______/______  A  ______/______/______  D.FER.|______|D.AB.|______|  ___________________________
+                                                                       3a -  P R O G R A M A C A O  D E  F E R I A S ______/______/______  A  ______/______/______  D.FER.|______|D.AB.|______|  ___________________________
+0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
+          1         2         3         4         5         6         7         8         9         10        11        12        13        14        15        16        17        18        19        20        21
+*/
+
+//здддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд©
+//Ё Verifica as perguntas e adiciona caso nao exista             Ё
+//юдддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддды
+aRegs     := {}
+
+// Grupo/Ordem/Pergunta/Variavel/Tipo/Tamanho/Decimal/Presel/GSC/Valid/Var01/Def01/Cnt01/Var02/Def02/Cnt02/Var03/Def03/Cnt03/Var04/Def04/Cnt04/Var05/Def05/Cnt05/XF3
+Aadd(aRegs,{cPerg,"15","Imprime            ?","╗Imprime           ?","Print              ?","mv_chf","N",01,0,1,"C","","mv_par15","1 Periodo","1 Periodo","1 Period","","","2 Periodos","2 Periodos","2 Periods","","","3 Periodos","3 Periodos ","3 Periods ","","","","","",""})
+ValidPerg(aRegs,cPerg) 
+
+//здддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд©
+//Ё Verifica as perguntas selecionadas                           Ё
+//юдддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддды
+Pergunte("GPR400",.F.)
+
+//здддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд©
+//Ё Envia controle para a funcao SETPRINT                        Ё
+//юдддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддды
+wnrel:="GPER400"            //Nome Default do relatorio em Disco
+wnrel:=SetPrint(cString,wnrel,cPerg,Titulo,cDesc1,cDesc2,cDesc3,.F.,aOrd,.F.,"G")
+
+If nLastKey = 27
+	Return
+Endif
+SetDefault(aReturn,cString)
+If nLastKey = 27
+	Return
+Endif
+
+RptStatus({|lEnd| GP400Imp(@lEnd,wnRel,cString)},Titulo)
+
+//здддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд©
+//Ё Fim do Relatorio                                             Ё
+//юдддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддды
+Return
+
+/*
+эээээээээээээээээээээээээээээээээээээээээээээээээээээээээээээээээээээээээээээ
+╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠
+╠╠зддддддддддбддддддддддбдддддддбдддддддддддддддддддддддбддддддбдддддддддд©╠╠
+╠╠ЁFun┤┘o    Ё GP400IMP Ё Autor Ё R.H.                  Ё Data Ё 25.05.96 Ё╠╠
+╠╠цддддддддддеддддддддддадддддддадддддддддддддддддддддддаддддддадддддддддд╢╠╠
+╠╠ЁDescri┤┘o Ё Impressфo da Relacao de Programacao de Ferias              Ё╠╠
+╠╠цддддддддддедддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд╢╠╠
+╠╠ЁSintaxe   Ё GP400IMP(lEnd,WnRel,cString)                               Ё╠╠
+╠╠цддддддддддедддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд╢╠╠
+╠╠Ё Uso      Ё Generico                                                   Ё╠╠
+╠╠юддддддддддадддддддддддддддддддддддддддддддддддддддддддддддддддддддддддды╠╠
+╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠╠
+ъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъъ*/
+Static Function GP400IMP(lEnd,WnRel,cString)
+//здддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд©
+//Ё Define Variaveis Locais (Programa)                           Ё
+//юдддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддды
+Local FimPAqui    := ""
+Local DFimPAqui   := ""
+Local DPRPAqui    := ""
+Local cAcessaSRA  := &("{ || " + ChkRH("GPER400","SRA","2") + "}")
+Local lTemCpoProg
+Local dDtIProg1,dDtIProg2,dDtIProg3
+Local nDiasFer1 :=nDiasFer2:=nDiasFer3:= 0
+Local nDiasAbo1	:=nDiasAbo2:=nDiasAbo3:= 0
+
+//здддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд©
+//Ё Define Variaveis Private(Programa)                           Ё
+//юдддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддды
+Private Normal    := 0
+Private Descanso  := 0
+Private cPerFeAc  := If(cPaisLoc=="URU","S",GetMv("MV_FERPAC",,"N")) // Ferias por ano civil
+
+//здддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд©
+//Ё Verifica a existencia dos campos de programacao ferias no SRFЁ
+//юдддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддды
+lTemCpoProg := fTCpoProg()
+
+//здддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд©
+//Ё Carregando variaveis mv_par?? para Variaveis do Sistema.     Ё
+//юдддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддды
+nOrdem     := aReturn[8]
+cFilDe     := mv_par01                          //  Filial De
+cFilAte    := mv_par02                          //  Filial Ate
+cCcDe      := mv_par03                          //  Centro de Custo De
+cCcAte     := mv_par04                          //  Centro de Custo Ate
+cMatDe     := mv_par05                          //  Matricula De
+cMatAte    := mv_par06                          //  Matricula Ate
+cSituacao  := mv_par07                          //  Situacao Funcionario
+cCategoria := mv_par08                          //  Categoria Funcionario
+lSalta     := If( mv_par09 == 1 , .T. , .F. )   //  Salta Pagina Quebra C.Custo
+cNomDe     := mv_par10                          //  Nome De
+cNomAte    := mv_par11                          //  Nome Ate
+nTipFerias := mv_par12                          //  1-Nao programadas, 2-Programadas e 3-Ambas
+dProgDe    := mv_par13                          //  Data inicial para ferias programdas
+dProgAte   := mv_par14                          //  Data Final   para ferias programdas
+nPeriodo   := mv_par15							 // Imprimir 1 periodo, 2 periodos ou os 3 periodos	
+Titulo := STR0011+If(nOrdem==1,STR0012,If(nOrdem==2,STR0013,If(nOrdem==3,STR0020,If(nOrdem==4,STR0021,If(nOrdem==5,STR0022,STR0023))))) //"RELACAO DE PROGRAMACAO DE FERIAS "###"( C.CUSTO )"###"( MATRICULA )"###"( NOME )"###"( C.CUSTO + NOME )"###"( DATA BASE )"###"( DATA INICIO )"
+
+dbSelectArea( "SRA" )
+dbGoTop()
+
+If nOrdem == 1
+	dbSetOrder( 2 )
+	dbSeek( cFilDe + cCcDe + cMatDe , .T. )
+	cInicio := "SRA->RA_FILIAL + SRA->RA_CC + SRA->RA_MAT"
+	cFim    := cFilAte + cCcAte + cMatAte
+ElseIf nOrdem == 2
+	dbSetOrder( 1 )
+	dbSeek(cFilDe + cMatDe,.T.)
+	cInicio  := "SRA->RA_FILIAL + SRA->RA_MAT"
+	cFim     := cFilAte + cMatAte
+ElseIf nOrdem == 3
+	dbSetOrder( 3 )
+	dbSeek(cFilDe + cNomDe + cMatDe,.T.)
+	cInicio  := "SRA->RA_FILIAL + SRA->RA_NOME + SRA->RA_MAT"
+	cFim     := cFilAte + cNomAte + cMatAte
+ElseIf nOrdem == 4
+    dbSetOrder( 8 )
+    dbSeek(cFilDe + cCcDe + cNomDe,.T.)
+    cInicio  := "SRA->RA_FILIAL + SRA->RA_CC + SRA->RA_NOME"
+    cFim     := cFilAte + cCcAte + cNomAte
+ElseIf nOrdem == 5
+	dbSelectArea("SRF")
+	cIndCond:= "SRF->RF_FILIAL + DTOS(SRF->RF_DATABAS)"
+	cFor:= '(SRF->RF_FILIAL >= "'+cFilDe+'")'
+	cFor+= '.And. (SRF->RF_FILIAL <= "'+cFilAte+'")'
+ElseIf nOrdem == 6
+	dbSelectArea("SRF")
+	cIndCond:= "SRF->RF_FILIAL + DTOS(SRF->RF_DATAINI)"
+	cFor:= '(SRF->RF_FILIAL >= "'+cFilDe+'")'
+	cFor+= '.And. (SRF->RF_FILIAL <= "'+cFilAte+'")'
+EndIf
+
+//здддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд©
+//Ё Cria Indice caso Impressao por Programa┤фo de F┌rias ("SRF") Ё
+//юдддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддды
+If nOrdem == 5 .Or. nOrdem == 6 // Ordem por Programa┤фo de F┌rias
+	dbSelectArea("SRF")
+	cArqNtx  := CriaTrab(NIL,.f.)
+	IndRegua("SRF",cArqNtx,cIndCond,,cFor,STR0024)	//"Selecionando Registros..."
+	dbGoTop()
+EndIf
+
+If nOrdem == 5 .Or. nOrdem == 6 // Ordem por Programa┤фo de F┌rias
+	dbSelectArea( "SRF" )
+Else
+	dbSelectArea( "SRA" )
+EndIf
+
+//здддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд©
+//Ё Carrega Regua Processamento                                  Ё
+//юдддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддды
+SetRegua(RecCount())
+
+cFiAnt := "  "
+cCcAnt := "         "
+ATABFER:={}
+While !Eof()
+	//здддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд©
+	//Ё Movimenta Regua Processamento                                Ё
+	//юдддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддды
+	IncRegua()
+
+	If lEnd
+		@Prow()+1,0 PSAY cCancel
+		Exit
+	Endif
+
+	If nOrdem == 5 .Or. nOrdem == 6 // Ordem por Programa┤фo de F┌rias
+		dbSelectArea( "SRA" )
+		dbSetOrder(1)
+		dbSeek( SRF->RF_FILIAL + SRF->RF_MAT )
+	EndIf
+
+	//здддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд©
+	//Ё Testa Situacao do Funcionario na Folha                       Ё
+	//юдддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддды
+	If !( SRA->RA_SITFOLH $ cSituacao ) .Or. !( SRA->RA_CATFUNC $ cCategoria )
+		If nOrdem == 5 .Or. nOrdem == 6 // Ordem por Programa┤фo de F┌rias
+			dbSelectArea( "SRF" )
+		EndIf
+		dbSkip()
+		Loop
+	Endif
+
+	//здддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд©
+	//Ё Consiste Parametriza┤фo do Intervalo de Impressфo            Ё
+	//юдддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддды
+	If	(SRA->RA_FILIAL < cFilDe) .Or. (SRA->RA_FILIAL > cFilAte) .Or. ;
+		(SRA->RA_MAT    < cMatDe) .Or. (SRA->RA_MAT    > cMatAte) .Or. ;
+		(SRA->RA_CC     < cCcDe)  .Or. (SRA->RA_CC     > cCcAte)  .Or. ;
+        (SRA->RA_NOME   < cNomDe) .Or. (SRA->RA_NOME   > cNomAte)
+		If nOrdem == 5 .Or. nOrdem == 6 // Ordem por Programa┤ao de F┌rias
+			dbSelectArea( "SRF")
+		EndIf
+		dbSkip()
+		Loop
+	EndIf
+	
+	//здддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд©
+	//Ё Consiste controle de acessos e filiais validas               Ё
+	//юдддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддды
+	If !(SRA->RA_FILIAL $ fValidFil()) .Or. !Eval(cAcessaSRA)
+		If nOrdem == 5 .Or. nOrdem == 6 // Ordem por Programa┤ao de F┌rias
+			dbSelectArea( "SRF")
+		EndIf
+		dbSkip()
+		Loop
+	EndIf
+
+	//здддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд©
+	//Ё Se Nao Achou Registro no SRF Gera Automatico                 Ё
+	//юдддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддды
+	dbSelectArea( "SRF" )
+	If nOrdem # 5 .And. nOrdem # 6
+		If !dbSeek( SRA->RA_FILIAL + SRA->RA_MAT )
+			RecLock("SRF",.T.)
+			SRF->RF_FILIAL := SRA->RA_FILIAL
+			SRF->RF_MAT    := SRA->RA_MAT
+			SRF->RF_DATABAS:= SRA->RA_ADMISSA
+			MsUnlock()
+		EndIf
+	EndIf
+
+	If nOrdem == 5 .Or. nOrdem == 6
+		dbSelectArea( "SRF" )
+	Else
+		dbSelectArea( "SRA" )
+	EndIf
+
+	//здддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд©
+	//Ё Calculo dos Dias de Ferias Vencidas e a Vencer               Ё
+	//юдддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддды
+	nDiasVenc := nDiasProp := nDiasAbono := 0
+	Calc_Fer(SRF->RF_DATABAS,dDataBase,@nDiasVenc,@nDiasProp)
+	nDiasVenc := Max(nDiasVenc - SRF->RF_DFERANT, 0)
+
+	//зддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд©
+	//Ё Calculo dias de ferias pela data de inicio das ferias progrmadasЁ
+	//юддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддды
+	nDiaVen	:= 0 												//Dias de Ferias qdo efetua programacao
+	nDiaPro	:= 0    
+	If ! Empty(SRF->RF_DATAINI)
+		Calc_Fer(SRF->RF_DATABAS,SRF->RF_DATAINI,@nDiaVen,@nDiaPro)
+		nDiaVen := If (nDiaVen > 30, 30,nDiaVen)
+	Endif	
+    
+	//здддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд©
+	//Ё Calculo dias de  faltas                                      Ё
+	//юдддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддды
+	nDFaltaV:= SRF->RF_DFALVAT
+	nDFaltaP:= SRF->RF_DFALAAT
+	TabFaltas(@nDFaltaV)
+	TabFaltas(@nDFaltaP)
+	nDFaltaP := ((nDFaltaP / 30) * nDiasProp )
+	
+	//здддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд©
+	//Ё Montagem da data do inicio da programacao das ferias         Ё
+	//юдддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддды
+	dDtIProg1 	:= SRF->RF_DATAINI
+	dDtIProg2 	:= dDtIProg3 := CTOD("")
+	nDiasFer1 	:= nDiasFer2 := nDiasFer3 := 0 
+	nDiasAbo1	:= nDiasAbo2 := nDiasAbo3 := 0	
+
+
+	//-- Prioriza as informacoes digitadas no novos cpos de program.
+	If lTemCpoProg
+		dDtIProg2 := SRF->RF_DATINI2
+		dDtIProg3 := SRF->RF_DATINI3
+		nDiasFer1 := SRF->RF_DFEPRO1
+		nDiasFer2 := SRF->RF_DFEPRO2
+		nDiasFer3 := SRF->RF_DFEPRO3
+		nDiasAbo1 := SRF->RF_DABPRO1
+		nDiasAbo2 := SRF->RF_DABPRO2
+		nDiasAbo3 := SRF->RF_DABPRO3
+	EndIf
+
+	//-- Calcula dias de abono
+	If SRF->RF_TEMABPE == "S" .And.  ! Empty(SRF->RF_DATAINI) .And. nDiasAbo1 = 0 .And. nDiasFer1 = 0
+		nDiasAbo1	:=  (Min(nDiaVen-SRF->RF_DFERANT,30) - nDFaltaV ) /3 
+		nDiasAbo1	:= Int(nDiasAbo1,2)
+	EndIf	
+
+
+
+	//здддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд©
+	//Ё Verifica Data Inicio                                         Ё
+	//юдддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддды
+	If (!Empty(dDtIProg1) .Or. !Empty(dDtIProg2) .Or. !Empty(dDtIProg3)) .And. nTipFerias == 1
+		dbSkip()
+		Loop
+	ElseIf Empty(dDtIProg1) .And. Empty(dDtIProg2) .And. Empty(dDtIProg3) .And. nTipFerias == 2
+		dbSkip()
+		Loop
+	EndIf
+
+	//здддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд©
+	//Ё Consiste Ferias Programdas no Intervalo Definido			 Ё
+	//юдддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддды
+    If nTipFerias == 2 .And. (dDtIProg1 < dProgDe .Or. dDtIProg1 > dProgAte) .And.;
+	   (dDtIProg2 < dProgDe .Or. dDtIProg2 > dProgAte) .And.;
+	   (dDtIProg3 < dProgDe .Or. dDtIProg3 > dProgAte)
+		dbSkip()
+        Loop
+    EndIf
+
+	//здддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд©
+	//ЁVerifica Quebra de Centro de Custo e Filial                   Ё
+	//юдддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддды
+	If nOrdem == 1 .Or. nOrdem == 4
+		If !(cCcAnt == SRA->RA_CC)
+			If !(cCcAnt == Space(9))
+				Impr(Replicate("=",220),"C")
+				If lSalta
+					Impr("","P")
+				EndIf
+            EndIf
+			cCcAnt := SRA->RA_CC
+
+			// Imprime a descricao do Centro de Custo
+			SI3->(dbSeek(SRA->RA_FILIAL+SRA->RA_CC))
+   		   	Impr( SI3->I3_DESC,"C")
+		EndIf
+	EndIf
+	If !(cFiAnt == SRA->RA_FILIAL)
+		If !(cFiAnt == Space(2))
+			Impr("","P")
+		EndIf
+		cFiAnt := SRA->RA_FILIAL
+	EndIf
+	
+	//здддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд©
+	//Ё Periodo Aquisitivo                                           Ё
+	//юдддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддды
+	DFIMPAQUI := fCalcFimAq(SRF->RF_DATABAS)
+	DPRPAQUI  := fCalcFimAq(DFIMPAQUI+1)
+
+	//здддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд©
+	//Ё Imprimir as duas linhas do funcionario na mesma pagina       Ё
+	//юдддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддды
+  	If LI > 56
+  		LI  := 70 ; DET := ""
+	    IMPR(DET,"C")
+  	EndIf
+
+	//здддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд©
+	//Ё Imprime Detalhe Para o Funcionario                           Ё
+	//юдддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддды
+	If SRF->RF_DVENPEN > 0 .And. !Empty(SRF->RF_IVENPEN)
+		DET := Space(1)+SRF->RF_FILIAL+Space(4)+SRA->RA_CC+Space(6)+SRA->RA_MAT+Space(3)+LEFT(SRA->RA_NOME,30)+Space(2)
+	    DET += PadR(DtoC(SRA->RA_ADMISSA),10)+Space(2)+PadR(DtoC(SRF->RF_IVENPEN),10)+Space(2)
+	    DET += PadR(DtoC(SRF->RF_IVENPEN),10)+Space(2)+PadR(DtoC(SRF->RF_FVENPEN),10)+Space(2)
+	  	DET += PadR(DtoC(SRF->RF_FVENPEN + 30),10)+Space(2)+PadR(DtoC(DFIMPAQUI - 45) ,10)+Space(6)
+		DET += Transform(SRF->RF_DVENPEN,"999.9")+Space(5)+Transform(0,"999.9")+Space(5)
+		DET += Transform(0,"999.9")+Space(5)+Transform(0,"999.9")+Space(5)
+		DET += Transform(SRF->RF_DVENPEN,"999.9")+Space(1)
+	    DET += "|______|"
+	    IMPR(DET,"C")
+	    DET := ""
+	    IMPR(DET,"C")        
+	EndIf
+
+	//здддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд©
+	//Ё Imprimir as duas linhas do funcionario na mesma pagina       Ё
+	//юдддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддды
+  	If LI > 56
+  		LI  := 70 ; DET := ""
+	    IMPR(DET,"C")
+  	EndIf
+
+	//здддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд©
+	//Ё Imprime Detalhe Para o Funcionario                           Ё
+	//юдддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддды
+	DET := Space(1)+SRF->RF_FILIAL+Space(4)+SRA->RA_CC+Space(17)+SRA->RA_MAT+Space(3)+LEFT(SRA->RA_NOME,30)+Space(2)
+    DET += PadR(DtoC(SRA->RA_ADMISSA),10)+Space(2)+PadR(DtoC(SRF->RF_DATABAS),10)+Space(2)
+    DET += PadR(DtoC(SRF->RF_DATABAS),10)+Space(2)+PadR(DtoC(DFIMPAQUI),10)+Space(2)
+  	DET += PadR(DtoC(DFIMPAQUI + 30),10)+Space(2)+PadR(DtoC(DPRPAQUI - 75) ,10)+Space(6)
+	DET += Transform(nDiasVenc,"999.9")+Space(5)+Transform(nDFaltaV,"999.9")+Space(5)
+	DET += Transform(nDiasProp,"999.9")+Space(5)+Transform(nDFaltaP,"999.9")+Space(5)
+	DET += Transform(nDiasVenc + nDiasProp - nDFaltaV - nDFaltaP,"999.9")+Space(1)
+    If SRF->RF_PERC13S > 0
+       DET += TransForm(SRF->RF_PERC13S,"999.99")
+    Else
+       DET += "|______|"
+    Endif
+    IMPR(DET,"C")
+	DET := " "   
+    IMPR(DET,"C")
+	//-- Programacao ferias    
+    For nCnt1 := 1 To nPeriodo
+    	dDtIniProg := If(nCnt1 == 1, dDtIProg1, If(nCnt1 == 2, dDtIProg2, dDtIProg3))
+    	nDiasFePro := If(nCnt1 == 1, If (nDiasFer1 = 0 , nDiaVen,nDiasFer1), If(nCnt1 == 2, nDiasFer2, nDiasFer3))
+    	nDiasAbono := If(nCnt1 == 1, nDiasAbo1, If(nCnt1 == 2, nDiasAbo2, nDiasAbo3))
+
+		//-- Abater Dias de Abono quando  nao houver os campos de programacao com dias ou quando
+		//-- existir os campos e estiver zerado.
+		If nCnt1 == 1 .And. ! Empty(SRF->RF_DATAINI) .And. ;
+		 (! lTemCpoProg ) .Or. ( lTemCpoProg .And. SRF->RF_DFEPRO1 = 0  .And. SRF->RF_DABPRO1 = 0 )
+			nDiasFePro -= ( SRF->RF_DFERANT + nDFaltaV + nDiasAbono)
+		Endif
+   		nDiasFePro := Max(nDiasFePro, 0)
+   		nDiasFePro := Min(nDiasFePro,30)
+   		DET		   := Space(70)+ if(nCnt1 == 1,STR0025,if(nCnt1 == 2,STR0026,STR0027))//"1a -  P R O G R A M A C A O  D E  F E R I A S"#"2a -  P R O G R A M A C A O  D E  F E R I A S"#"3a -  P R O G R A M A C A O  D E  F E R I A S"
+		//-- Periodo de gozo de ferias 
+	    If !Empty(dDtIniProg) 
+	    	If nDiasFePro  > 0 
+		  		dDataAte	:= DtoC(dDtIniProg+nDiasFePro-1)
+    	 	ElseIf nDiaVen > 0  
+    	 		dDataAte	:= DtoC(dDtIniProg+nDiaVen  -1)
+    	 	Else
+    	 		dDataAte	:= "______/______/______"
+    	    Endif
+	        DET	+= PadC(DtoC(dDtIniProg),20)+STR0014+PadC(dDataAte,20)   //"  A  "
+	    Else
+			DET        += STR0015	//"______/______/______  A  ______/______/______"
+	    EndIf
+	    If nDiasFePro > 0
+	       DET += Space(1)+STR0028+Space(2)+ TransForm(nDiasFePro,"999.9") + space(3)
+	    Else
+	       DET += Space(1)+STR0028+space(2)+ "|______|" //"D.Ferias
+		EndIf
+	    If nDiasAbono > 0  
+	       DET += space(02)+STR0029+ space(1)+ TransForm(nDiasAbono,"999.9") + Space(3)//"D.AB."
+	    Elseif nDiasAbono = 0 .And. SRF->RF_TEMABPE == "S" .And. nDiasFePro = 0 
+	       DET += space(02)+STR0029+ space(3)+ STR0030+SPACE(3)//"D.AB."
+	    Else
+	       DET += space(02)+STR0029+ space(1)+ "|______|" //"D.AB."
+	    Endif
+	    DET += Space(2)
+		DET += Replicate("_", 27)
+    	IMPR(DET,"C")
+	    DET := ""
+    	IMPR(DET,"C")
+	Next nCnt1
+
+   	cFiAnt   := SRA->RA_FILIAL
+	cCcAnt   := SRA->RA_CC
+	If nOrdem == 5 .Or. nOrdem == 6
+		dbSelectArea( "SRF" )
+	Else
+		dbSelectArea( "SRA" )
+	EndIf
+	dbSkip()
+Enddo
+IMPR("","F")
+
+//здддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд©
+//Ё Termino do relatorio                                         Ё
+//юдддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддды
+dbSelectArea( "SRF" )
+Set Filter to
+RetIndex("SRF")
+dbSetOrder(1)
+
+If nOrdem == 5 .Or. nOrdem == 6 // Ordem por Programa┤фo de F┌rias
+	fErase(cArqNtx  + OrdBagExt() )
+EndIf
+
+dbSelectArea( "SRA" )
+Set Filter to
+dbSetOrder(1)
+
+If aReturn[5] = 1
+	Set Printer To                       	
+	Commit
+	ourspool(wnrel)
+Endif
+MS_FLUSH()
+
+
+

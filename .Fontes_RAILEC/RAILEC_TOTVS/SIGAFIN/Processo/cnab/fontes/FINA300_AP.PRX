@@ -1,0 +1,841 @@
+
+#include "rwmake2.ch"
+#INCLUDE "FINA300.CH"
+User Function FINA300()
+
+//---------------------------------------------------------------------
+// Declaracao de variaveis utilizadas no programa atraves da funcao    
+// SetPrvt, que criara somente as variaveis definidas pelo usuario,    
+// identificando as variaveis publicas do sistema utilizadas no codigo 
+// Incluido pelo assistente de conversao do AP6 IDE                    
+//---------------------------------------------------------------------
+
+SetPrvt("AROTINA,DDATALANC,CPADRAO,CBCODE,CBCOATE,DVENCINI")
+SetPrvt("DVENCFIM,DBAIXA,NJUROS,NCORRECAO,CCTBAIXA,CMARCA")
+SetPrvt("CCADASTRO,NOPCA,ASAYS,ABUTTONS,LDIGITA,LAGLUT")
+SetPrvt("LCONTABILIZA,NC,LCABEC,CNUMTIT,LUMHELP,NREGISTRO")
+SetPrvt("AHEADA,AHEAD1,AHEAD2,ADETA,ADETB,ADETJ")
+SetPrvt("ADETN,ADETO,ATRAI1,ATRAI2,ATRAIA,NBYTES")
+SetPrvt("NTAMARQ,NLIDOS,CARQCONF,CARQENT,NHDLCONF,NBCOHDL")
+SetPrvt("NTOTAL,LF300SE5,NVALORTOTAL,LFA300OCO,LFA300REN,ATIPOSEQ,NVENDOR")
+SetPrvt("NSEQUENCIA,NTAMPARC,NMULTA,VALOR,LAUT,NTOTABAT")
+SetPrvt("CBANCO,CAGENCIA,CCONTA,CSUBCTA,CTABELA,CLOTE")
+SetPrvt("XBUFFER,NHDLBCO,LPADRAO,CREGISTRO,CRETORNO,CSEGMENTO")
+SetPrvt("NDESCONT,CVALPAG,CDATA,CVALJUR,CVALDES,NASCAN")
+SetPrvt("NRECTIT,NHDLPRV,NVALESTRANG,LDESCONTO,CHIST070,NSALDO")
+SetPrvt("NSALDOCRU,CNUMERO,CPREFIXO,CPARCELA,CFORNECE,NMOEDA")
+SetPrvt("NLACO,NSALDUP,CALIAS,LRET,")
+
+/*
+  Função    : Fina300  
+  Autor     : Pilar S Albaladejo    
+  Data      : 26/07/95
+  Descrição : Retorno do arquivo SISPAG
+  Sintaxe   : Fina300()
+  Uso       : Generico
+*/
+
+
+PRIVATE aRotina := { { STR0002, "AxVisual"  , 0 , 2} ,;     //"Visualiza"
+                     { STR0012, "u_FA240Sis"  , 0 , 0} ,; //"Gerar Arquivo"
+                     { STR0003, "u_fA300R", 0 , 2}  }  //"Recebe Arquivo"
+                     
+
+PRIVATE dDataLanc := dDataBase,cPadrao := "530"
+PRIVATE cBcoDe    := CriaVar("E2_PORTADO"),cBcoAte := CriaVar("E2_PORTADO")
+PRIVATE dVencIni  := dDataBase,dVencFim := dDataBase,dBaixa := dDataBase,nJuros := 0
+PRIVATE nCorrecao := 0
+PRIVATE cCtBaixa  := GetMv("MV_CTBAIXA")
+PRIVATE cMarca    := GetMark( )
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Define o cabe‡alho da tela de baixas                         ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+PRIVATE cCadastro := STR0013  //"Sispag"
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Verifica o n£mero do Lote                                    ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+Private cLote
+LoteCont( "FIN" )
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Endere‡a a Fun‡„o de BROWSE                                  ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+mBrowse( 6, 1,22,75,"SE2",,"!E2_SALDO")
+
+/*/
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
+±±³Fun‡„o    ³ fA300Ret ³ Autor ³ Pilar S Albaladejo    ³ Data ³ 26/07/95 ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Descri‡„o ³ Comunica‡„o Banc ria - Retorno SisPag                      ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Sintaxe   ³ fA300Ret()                                                 ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³ Uso      ³ FinA200                                                    ³±±
+±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+/*/
+
+// Substituido pelo assistente de conversao do AP6 IDE em 29/04/05 ==> Function fA300Ret(cAlias)
+User Function fA300R(cAlias)
+
+LOCAL nOpca := 0
+LOCAL aSays:={}
+LOCAL aButtons:={}
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³      ** Carrega Fun‡„o Pergunte **        ³
+//³ mv_par01 - Mostra lan‡amentos cont beis   ³
+//³ mv_par02 - Aglutina lan‡amentos           ³
+//³ mv_par03 - Atualiza moedas por            ³
+//³ mv_par04 - Arquivo de entrada             ³
+//³ mv_par05 - Arquivo de config              ³
+//³ mv_par06 - C¢digo do banco                ³
+//³ mv_par07 - C¢digo da agencia              ³
+//³ mv_par08 - C¢digo da conta                ³
+//³ mv_par09 - Sub-conta                      ³
+//³ mv_par10 - Abate desconto da comiss„o     ³
+//³ mv_par11 - Contabiliza On-Line            ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+VK_F12 := 123	 // ecb - 12/05/2005
+
+SetKey (VK_F12,{|a,b| AcessaPerg("AFI301",.T.)})
+
+pergunte("AFI301",.F.)
+nOpca := 0
+AADD (aSays, STR0014 ) //"   Esta opção processa o Arquivo de retorno de Comunicação Bancária SisPag"
+AADD (aSays, STR0015)  //"Deverão ser verificados os parâmetros para correto processamento"
+
+AADD(aButtons, { 1,.T.,{|o| nOpca:= 1,o:oWnd:End()}} )
+AADD(aButtons, { 2,.T.,{|o| o:oWnd:End() }} )
+AADD(aButtons, { 5,.T.,{|| Pergunte("AFI301",.T. ) } } )
+FormBatch( STR0005, aSays, aButtons )  //"Retorno Arquivo SisPag"
+
+lDigita:=IIF(mv_par01 == 1,.T.,.F.)
+lAglut :=IIF(mv_par02 == 1,.T.,.F.)
+lContabiliza:= Iif(mv_par11 == 1,.T.,.F.)
+
+If nOpca == 1
+   Processa({|lEnd| Fa300P()})
+EndIF
+
+Return
+
+/*/
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
+±±³Fun‡„o    ³Fa300Proce³ Autor ³                       ³ Data ³ 26/07/95 ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Descri‡„o ³ Comunica‡„o Banc ria - Retorno SisPag                      ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Sintaxe   ³Fa300Processa()                                             ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³ Uso      ³ FinA200                                                    ³±±
+±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+/*/
+// Substituido pelo assistente de conversao do AP6 IDE em 29/04/05 ==> Function fA300Processa()
+Static Function fA300P()
+
+Local cPadrao := "" , nC := 0 , lCabec := .f.           
+Local cNumTit    := ""
+Local lUmHelp := .F.
+Local nRegistro := 0
+
+Local aHeadA := {}
+Local aHead1 := {}
+Local aHead2 := {}
+Local aDetA  := {}
+Local aDetB  := {}
+Local aDetJ  := {}
+Local aDetN  := {}
+Local aDetO  := {}
+Local aTrai1 := {}
+Local aTrai2 := {}
+Local aTraiA := {}
+Local nBytes := 0
+Local nTamArq := 0 , nLidos := 0
+Local cArqConf := "" , cArqEnt := ""
+Local nHdlConf := 0 , nBcoHdl := 0
+Local nTotal := 0
+LOCAL lF300SE5 := ExistBlock("F300SE5" )
+LOCAL nValorTotal := 0
+LOCAL nVendor := 0
+Local lFa300Oco := ExistBlock("FA300OCO")
+Local lFa300Ren := ExistBlock("FA300Ren")
+Local aTipoSeq := {}
+Local nSequencia := 0
+Local nTamParc := TamSx3("E2_PARCELA")[1]
+Local nMulta := 0
+Local nAscan
+
+VALOR := 0
+
+Private cBanco
+Private cAgencia
+Private cConta
+Private lAut := .f.,nTotAbat := 0
+Private cArquivo
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Posiciona no Banco indicado                                  ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+cBanco  := mv_par06
+cAgencia:= mv_par07
+cConta  := mv_par08
+cSubCta := mv_par09
+
+SA6->( dbSeek(Xfilial("SA6")+cBanco+cAgencia+cConta) )
+
+SEE->( dbSeek(Xfilial("SEE")+cBanco+cAgencia+cConta+cSubCta) )
+If !SEE->( found() )
+	Help(" ",1,"PAR150")
+	Return .F.
+Endif
+
+cTabela := Iif( Empty(SEE->EE_TABELA), "17" , SEE->EE_TABELA )
+
+aGetSX5 := FWGetSX5("17")
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Verifica se a tabela existe           ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+If Ascan(aGetSX5, {|x| x[1] + x[3] == xFilial("SX5") + cTabela}) == 0
+//If !SX5->( dbSeek( Xfilial("SX5") + cTabela ) )
+	Help(" ",1,"PAR150")
+	Return .F.
+Endif
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Verifica o numero do Lote                                    ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+PRIVATE cLote
+
+aGetSX5 := FWGetSX5("09")
+nPosChv := Ascan(aGetSX5,{|x| Alltrim(x[1]) + Alltrim(x[2]) + Alltrim(x[3]) == xFilial("SX5") + "09FIN"})
+
+
+If nPosChv > 0
+	cLote := aGetSX5[nPosChv,04]
+else
+	cLote := ""
+Endif
+
+//SX5->( dbSeek(xfilial("SX5")+"09FIN") )
+//cLote := Substr(X5Descri(),1,4)
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Abre arquivo de configura‡„o ³         
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+cArqConf := mv_par05
+IF !FILE(cArqConf)
+	Help(" ",1,"NOARQPAR")
+	Return .F.
+Else
+	nHdlConf := FOPEN(cArqConf,0)
+EndIF
+
+nTamArq := FSEEK(nHdlConf,0,2)
+FSEEK(nHdlConf,0,0)
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Preenche os arrays de acordo com a Identificador             ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+While nBytes < nTamArq
+	xBuffer := Space(85)
+	FREAD(nHdlConf,@xBuffer,85)
+	IF SubStr(xBuffer,1,1) == "A" .or. SubStr(xBuffer,1,1) == Chr(1)
+		AADD(aHeadA,{  SubStr(xBuffer,02,15) ,SubStr(xBuffer,17,03),;
+			SubStr(xBuffer,20,03) ,SubStr(xBuffer,23,01),;
+			SubStr(xBuffer,24,60 ) } )
+	ElseIf SubStr(xBuffer,1,1) == "B" .or. SubStr(xBuffer,1,1) == Chr(2)
+		AADD(aHead1,{  SubStr(xBuffer,02,15) ,SubStr(xBuffer,17,03),;
+			SubStr(xBuffer,20,03) ,SubStr(xBuffer,23,01),;
+			SubStr(xBuffer,24,60 ) } )
+	ElseIf SubStr(xBuffer,1,1) == "C" .or. SubStr(xBuffer,1,1) == Chr(3)
+		AADD(aHead2,{  SubStr(xBuffer,02,15) ,SubStr(xBuffer,17,03),;
+			SubStr(xBuffer,20,03) ,SubStr(xBuffer,23,01),;
+			SubStr(xBuffer,24,60 ) } )
+	Elseif SubStr(xBuffer,1,1) == "D" .or. SubStr(xBuffer,1,1) == Chr(4)
+		AADD(aTrai1,{  SubStr(xBuffer,02,15) ,SubStr(xBuffer,17,03),;
+			SubStr(xBuffer,20,03) ,SubStr(xBuffer,23,01),;
+			SubStr(xBuffer,24,60) } )
+	Elseif SubStr(xBuffer,1,1) == "E" .or. SubStr(xBuffer,1,1) == Chr(5)
+		AADD(aTrai2,{  SubStr(xBuffer,02,15) ,SubStr(xBuffer,17,03),;
+			SubStr(xBuffer,20,03) ,SubStr(xBuffer,23,01),;
+			SubStr(xBuffer,24,60) } )
+	Elseif SubStr(xBuffer,1,1) == "F" .or. SubStr(xBuffer,1,1) == Chr(6)
+		AADD(aTraiA,{  SubStr(xBuffer,02,15) ,SubStr(xBuffer,17,03),;
+			SubStr(xBuffer,20,03) ,SubStr(xBuffer,23,01),;
+			SubStr(xBuffer,24,60) } )
+	Elseif SubStr(xBuffer,1,1) == "G" .or. SubStr(xBuffer,1,1) == Chr(7)
+		AADD(aDetA,{   SubStr(xBuffer,02,15) ,SubStr(xBuffer,17,03),;
+			SubStr(xBuffer,20,03) ,SubStr(xBuffer,23,01),;
+			SubStr(xBuffer,24,60) } )
+	Elseif SubStr(xBuffer,1,1) == "H" .or. SubStr(xBuffer,1,1) == Chr(8)
+		AADD(aDetB,{   SubStr(xBuffer,02,15) ,SubStr(xBuffer,17,03),;
+			SubStr(xBuffer,20,03) ,SubStr(xBuffer,23,01),;
+			SubStr(xBuffer,24,60) } )
+	Elseif SubStr(xBuffer,1,1) == "J" .or. SubStr(xBuffer,1,1) == Chr(10)
+		AADD(aDetJ,{   SubStr(xBuffer,02,15) ,SubStr(xBuffer,17,03),;
+			SubStr(xBuffer,20,03) ,SubStr(xBuffer,23,01),;
+			SubStr(xBuffer,24,60) } )
+	Elseif SubStr(xBuffer,1,1) == "N" .or. SubStr(xBuffer,1,1) == Chr(16)
+		AADD(aDetN,{   SubStr(xBuffer,02,15) ,SubStr(xBuffer,17,03),;
+			SubStr(xBuffer,20,03) ,SubStr(xBuffer,23,01),;
+			SubStr(xBuffer,24,60) } )
+	Elseif SubStr(xBuffer,1,1) == "O" .or. SubStr(xBuffer,1,1) == Chr(17)
+		AADD(aDetO,{   SubStr(xBuffer,02,15) ,SubStr(xBuffer,17,03),;
+			SubStr(xBuffer,20,03) ,SubStr(xBuffer,23,01),;
+			SubStr(xBuffer,24,60) } )
+	EndIF
+	nBytes += 85
+EndDO
+
+IF Len(aHeadA) == 0  .And. Len(aHead1) == 0 .And. Len(aHead2) == 0 ;
+		.And. Len(aTrai1) == 0 .And. Len(aTrai2) == 0 ;
+		.And. Len(aDetA)  == 0 .And. Len(aDetB)  == 0 ;
+		.And. Len(aDetJ)  == 0 .And. Len(aDetN)  == 0 ;
+		.And. Len(aDetO)  == 0
+	HELP(" ",1,"AX044BCO")
+	Return
+ENDIF
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ fecha arquivo de configura‡„o ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+fclose(nHdlConf)
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Abre arquivo enviado pelo banco ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+cArqEnt := mv_par04
+IF !FILE(cArqEnt)
+	Help(" ",1,"NOARQENT")
+	Return .F.
+Else
+	nHdlBco := FOPEN(cArqEnt,0)
+EndIF
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Lˆ arquivo enviado pelo banco ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+nLidos := 0
+FSEEK(nHdlBco,0,0)
+nTamArq := FSEEK(nHdlBco,0,2)
+FSEEK(nHdlBco,0,0)
+
+cPadrao := "532"
+lPadrao := VerPadrao(cPadrao)
+
+ProcRegua(nTamArq/242,24,06)
+
+While nLidos <= nTamArq
+
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Lˆ linha do arquivo retorno ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	xBuffer := Space(242)
+	FREAD(nHdlBco,@xBuffer,242)
+	nLidos += 242
+
+	IncProc(24,6)
+
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Registro:ÚÄ0 - Header de Arquivo     ³
+	//³          ³ÚÄÄ1 - Header de Lote      ³
+	//³          ³³    3 - Detalhes Variados ³
+	//³          ³ÀÄÄ5 - Trailler de Lote    ³
+	//³          ÀÄ9 - Trailler de Arquivo   ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	cRegistro := Subst( xBuffer , Val(aHeada[3,2]) , 1+Val(aHeada[3,3])-Val(aHeada[3,2]))
+	IF cRegistro == "0"
+		Loop
+	Endif
+
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Retornos: 00-Cr‚dito efetuado BD-Pagamento Agendado  TA-Lote n„o aceito ³
+	//³ Retornos: BE-Pagto Agendado c/Forma Alterada p/ OP   RJ-Pagto Rejeitado ³
+	//³ Header de Lote - verificar se houve rejei‡„o                            ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Codigos de Rejeicao - TABELA=60                                         ³
+	//³                                                                         ³
+	//³ AD - Forma de lancamento invalida (Forma X Segmento)                    ³
+	//³ AH - Numero sequencial do registro no lote invalido                     ³
+	//³ AJ - Tipo de movimento invalido                                         ³
+	//³ AL - Codigo do Banco do favorecido ou depositario invalido              ³
+	//³ AM - Agencia do cedente invalido                                        ³
+	//³ AN - Conta corrente do cedente invalido                                 ³
+	//³ AO - Nome do cedente invalido                                           ³
+	//³ AP - Data de lancamento / pagamento invalida                            ³
+	//³ BC - Nosso numero invalido                                              ³
+	//³ IA - Remetente / Motivo invalido                                        ³
+	//³ IB - Valor do titulo invalido                                           ³
+	//³ IC - Valor do abatimento invalido                                       ³
+	//³ ID - Valor do desconto invalido                                         ³
+	//³ IE - Valor da mora invalido                                             ³
+	//³ IF - Valor da multa invalido                                            ³
+	//³ IG - Valor da deducao invalido                                          ³   //³                                                                         ³
+	//³ IH - Valor do acrescimo invalido                                        ³
+	//³ II - Data de vecnto invalida                                            ³
+	//³ IJ - Sequencia invalida de segmento                                     ³
+	//³ IK - Codigo de instrucao invalida                                       ³   //³                                                                         ³
+	//³ IL - Uso banco invalido para unibanco                                   ³
+	//³ IM - Tipo X Forma nao compativel                                        ³
+	//³ IN - Banco / Agencia nao pertence as pracas de compensacao ITAU         ³
+	//³ IO - Identificacao Tipo de Cheque invalido                              ³
+	//³ IP - Rejeicao do DAC do codigo de barras                                ³
+	//³                                                                         ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	If cRegistro == "1"
+		cRetorno := Subst( xBuffer , Val(aDeta[Len(aDeta),2]) , 1+Val(aDeta[Len(aDeta),3] )-Val(aDeta[Len(aDeta),2]))
+		Loop
+	Endif
+
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Final do lote e arquivo - Sai da leitura ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	IF cRegistro $ "9"
+		Exit
+	Endif
+	IF cRegistro #"3"
+		Loop
+	Endif
+
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Segmentos opcionais : B                               ³
+	//³ Obs: Segmentos A e J possuem informa‡”es sobre o      ³
+	//³ retorno.                                              ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	cSegmento:= Subst( xBuffer , Val(aDeta[5,2]) , 1+Val(aDeta[5,3])-Val(aDeta[5,2]) )
+	nJuros 	:= 0
+	nDescont	:= 0 
+	_cFornece  :=  ""
+	If cSegmento == "A"
+		cRetorno   := Subst( xBuffer, Val(aDeta[Len(aDeta),2]) , 1+Val(aDeta[Len(aDeta),3] )-Val(aDeta[Len(aDeta),2]))
+		cNumTit    := Subst( xBuffer, Val(aDeta[11,2])         , 1+Val(aDeta[11,3] )-Val(aDeta[11,2]))
+		cValPag    := Subst( xBuffer, Val(aDeta[15,2])         , 1+Val(aDeta[15,3] )-Val(aDeta[15,2]))
+		cData      := Substr( xBuffer,Val(aDeta[18,2])         , 1+Val(aDeta[18,3] )-Val(aDeta[18,2]))
+		//cData      := ChangDate(cData,SEE->EE_TIPODAT)
+		dBaixa	   := Ctod(Substr(cData,1,2)+"/"+Substr(cData,3,2)+"/"+Substr(cData,5),"ddmm"+Replicate("y",Len(Substr(cData,5))))
+	ElseIf cSegmento == "J"
+		cRetorno   := Subst( xBuffer, Val(aDetJ[Len(aDetJ),2]) , 1+Val(aDetJ[Len(aDetJ),3])-Val(aDetJ[Len(aDetJ),2]))
+		cNumTit    := Subst( xBuffer, Val(aDetJ[20,2])         , 1+Val(aDetJ[20,3] )-Val(aDetJ[20,2]))
+        _cFornece   := substr(cNumTit,13,8)
+		cValPag    := Subst( xBuffer, Val(aDetJ[18,2])         , 1+Val(aDetJ[18,3] )-Val(aDetJ[18,2]))
+		cValJur    := Subst( xBuffer, Val(aDetJ[16,2])         , 1+Val(aDetJ[16,3] )-Val(aDetJ[16,2]))
+		cValDes	  := Subst( xBuffer, Val(aDetJ[15,2])         , 1+Val(aDetJ[15,3] )-Val(aDetJ[15,2]))
+		nJuros	  := Val(cValJur)/100
+		nDescont   := Val(cValDes)/100
+		cData      := Substr( xBuffer,Val(aDetJ[17,2])         , 1+Val(aDetJ[17,3] )-Val(aDetJ[17,2]))
+		//cData      := ChangDate(cData,SEE->EE_TIPODAT)
+		dBaixa     := Ctod(Substr(cData,1,2)+"/"+Substr(cData,3,2)+"/"+Substr(cData,5),"ddmm"+Replicate("y",Len(Substr(cData,5))))
+	ElseIf cSegmento == "N"
+		cRetorno   := Subst( xBuffer, Val(aDetN[Len(aDetN),2]) , 1+Val(aDetN[Len(aDetN),3])-Val(aDetN[Len(aDetN),2]))
+		// Procura a posicao do numero do titulo
+		nAscan := Ascan(aDetN, {|e| AllTrim(Upper(e[1]))=="SEU NUMERO"})
+		If nAscan > 0
+			cNumTit    := Subst( xBuffer, Val(aDetN[nAscan,2])         , 1+Val(aDetN[nAscan,3] )-Val(aDetN[nAscan,2]))
+		Else
+			ApMsgAlert(STR0018) //"Por favor, indique no registro detalhe do arquivo de configuração segmento N, no nome do campo, o identificador SEU NUMERO utilizado para localizar, no arquivo retorno,o título a ser baixado"
+		Endif	
+		nAscan := Ascan(aDetN, {|e| AllTrim(Upper(e[1]))=="PRINCIPAL"})
+		If nAscan > 0
+			cValPag    := Subst( xBuffer, Val(aDetN[nAscan,2])         , 1+Val(aDetN[nAscan,3] )-Val(aDetN[nAscan,2]))
+		Else
+			ApMsgAlert(STR0019) //"Por favor, indique no registro detalhe do arquivo de configuração segmento N, no nome do campo, o identificador PRINCIPAL utilizado para localizar, no arquivo retorno, o valor principal a ser baixado"
+		Endif	
+		nAscan := Ascan(aDetN, {|e| AllTrim(Upper(e[1]))=="MULTA"})
+		If nAscan > 0
+			nMulta := Val(Subst( xBuffer, Val(aDetN[nAscan,2])         , 1+Val(aDetN[nAscan,3] )-Val(aDetN[nAscan,2])))
+		Else
+			ApMsgAlert(STR0020) //"Por favor, indique no registro detalhe do arquivo de configuração segmento N, no nome do campo, o identificador MULTA utilizado para localizar, no arquivo retorno, o valor da multa"
+		Endif	
+		nAscan := Ascan(aDetN, {|e| AllTrim(Upper(e[1]))=="JUROS"})
+		If nAscan > 0
+			cValJur    := Subst( xBuffer, Val(aDetN[nAscan,2])         , 1+Val(aDetN[nAscan,3] )-Val(aDetN[nAscan,2]))
+			nJuros	  := Val(cValJur)/100
+		Else
+			ApMsgAlert(STR0021) //"Por favor, indique no registro detalhe do arquivo de configuração segmento N, no nome do campo, o identificador JUROS utilizado para localizar, no arquivo retorno, o valor dos juros"
+		Endif	
+		cData      := Substr( xBuffer,Val(aDetN[15,2])         , 1+Val(aDetN[15,3] )-Val(aDetN[15,2]))
+		//cData      := ChangDate(cData,SEE->EE_TIPODAT)
+		dBaixa     := Ctod(Substr(cData,1,2)+"/"+Substr(cData,3,2)+"/"+Substr(cData,5),"ddmm"+Replicate("y",Len(Substr(cData,5))))
+	ElseIf cSegmento == "O"
+		cRetorno   := Subst( xBuffer, Val(aDetO[Len(aDetO),2]) , 1+Val(aDetO[Len(aDetO),3])-Val(aDetO[Len(aDetO),2]))
+		cNumTit    := Subst( xBuffer, Val(aDetO[16,2])         , 1+Val(aDetO[16,3] )-Val(aDetO[16,2]))
+		cValPag    := Subst( xBuffer, Val(aDetO[14,2])         , 1+Val(aDetO[14,3] )-Val(aDetO[14,2]))
+		cData      := Substr( xBuffer,Val(aDetO[13,2])         , 1+Val(aDetO[13,3] )-Val(aDetO[13,2]))
+		//cData      := ChangDate(cData,SEE->EE_TIPODAT)
+		dBaixa     := Ctod(Substr(cData,1,2)+"/"+Substr(cData,3,2)+"/"+Substr(cData,5),"ddmm"+Replicate("y",Len(Substr(cData,5))))
+	Else
+		Loop
+	Endif
+
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Verifica se existe o titulo no SE2. Caso este titulo n„o seja ³
+	//³ localizado, passa-se para a proxima linha do arquivo retorno. ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	dbSelectArea("SE2") 
+	DBORDERNICKNAME("SE2USU")
+	//dbSetOrder(1)
+	nRecTit := Recno()
+	//Busca pelo IdCnab    
+	_cNumTit := cNumTit           
+	//cNumTit := left(cNumTit,9)+substr(cNumTit,13,1)
+	cNumTit := left(cNumTit,13)
+//	If !dbSeek(xFilial("SE2")+Substr(cNumTit,1,10)+_cFornece)
+//	If !dbSeek(xFilial("SE2")+Substr(cNumTit,1,10))
+	If !dbSeek(xFilial("SE2")+ALLTRIM(cNumTit)) // MICHEL
+	    cNumTit := _cNumtit
+        if len(alltrim(cNumtit)) > 20
+        	dbSetOrder(1)
+			If !dbSeek(Xfilial("SE2")+Substr(cNumTit,1,13))
+				Help(" ",1,"NOESPECIE",,cNumTit,5,1)
+				dbGoTo(nRecTit)
+				Loop
+			Endif
+		endif
+	Endif
+	If SE2->E2_SALDO == 0 .or. SE2->E2_TIPO $ MVPAGANT+"#"+MV_CPNEG
+		dbGoTo(nRecTit)
+		Loop
+	Endif
+
+	nRegistro := SE2->(Recno())
+
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Verifica c¢digo da ocorrˆncia ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	dbSelectArea("SEB")
+	dbSeek(Xfilial("SEB")+cBanco+Padr(Substr(cRetorno,1,3),3)+"P")
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Reposicionar o SEB para uma chave diferente, que considere³ 
+	//³ tamb‚m, campos espec¡ficos criados no SEB.                ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	If lFa300Oco
+		ExecBlock("FA300OCO", .F., .F.)
+	Endif
+	dbSelectArea("SE2")
+
+	IF fa300rejei()
+		Loop
+	Endif
+
+	IF !(LEFT(SEB->EB_OCORR,2) $ "01ü06ü07ü08")  //Baixa do Titulo
+		Help(" ",1,"NOCORR",,"Chave="+cNumTit+CHR(10)+STR0016,3,1) //" Falta ocorrencia SEB de controle do sistema"
+		Loop
+	ENDIF
+
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Monta Contabiliza‡„o.         ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	If !lCabec .and. lPadrao .and. lContabiliza
+		nHdlPrv  := HeadProva(cLote,"FINA300",Substr(cUsuario,7,6),@cArquivo)
+		lCabec   := .t.
+	EndIf
+	nValEstrang := SE2->E2_SALDO
+	lDesconto   := Iif(mv_par10==1,.T.,.F.)
+	cHist070    := STR0017 //"Valor Pago s/ Titulo"
+	nSaldo      := SE2->E2_SALDO
+	nSaldoCru   := Moeda(SE2->E2_SALDO,1,"P")
+	cNumero     := SE2->E2_NUM
+	cPrefixo    := SE2->E2_PREFIXO
+	cParcela    := SE2->E2_PARCELA
+	cFornece    := _cFornece // SE2->E2_FORNECE
+//	nTotAbat    := 0
+	nTotAbat    := SE2->E2_DECRESC // MICHEL MOY EM 20/05/08
+	nMoeda      := 2
+	*ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	*³Soma Titulos Abatimentos                         ³
+	*ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	dbSelectArea( "SE2" )
+	dbSetOrder( 1 )
+	dbSeek( Xfilial("SE2")+cPrefixo+cNumero+cParcela )
+	While !EOF() .And. SE2->E2_FILIAL   == Xfilial("SE2")  .And. ;
+			SE2->E2_PREFIXO  == cPrefixo .And. ;
+			SE2->E2_NUM      == cNumero  .And. ;
+			SE2->E2_PARCELA  == cParcela
+		IF SE2->E2_TIPO$ MVABATIM .And. ;
+				SE2->E2_SALDO > 0 .And. ;
+				SE2->E2_FORNECE+SE2->E2_LOJA == cFornece
+
+			nTotAbat += Moeda(SE2->E2_SALDO,1,"P")
+			//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+			//³ Atualiza a Baixa do Titulo     ³
+			//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+			RecLock("SE2",.F.)
+			Replace E2_BAIXA   With dBaixa
+			Replace E2_SALDO   With 0
+			Replace E2_MOVIMEN With dDataBase
+			Replace E2_BCOPAG  With cBanco
+			Msunlock( )
+		EndIF
+
+		dbSkip()
+	Enddo
+	dbSelectArea( "SE2" )
+	dbGoTo( nRegistro )
+//  nVendor := 0 //SE2->E2_ACRESC
+    nVendor := SE2->E2_ACRESC // MICHEL MOY EM 20/05/08
+
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Atualiza a Baixa do Titulo                 ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	RecLock("SE2")
+	Replace E2_BAIXA   With dBaixa ,;
+			E2_VALLIQ  With nSaldoCru-nTotAbat+nJuros-nDescont+nVendor,;
+			E2_SALDO   With 0 ,;
+			E2_MOVIMEN With dDataBase ,;
+			E2_BCOPAG  With E2_PORTADO,;
+			E2_JUROS   With nJuros+nVendor    ,;
+			E2_DESCONTO With nDescont    ,;
+			E2_CORREC  With nCorrecao  ,;
+			E2_SDACRES With 0
+	MsUnlock( )
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Para numerar as sequencias o sistema precisa procurar os	³
+	//³ registros com  tipodoc igual a vl ou ba.							³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	aTipoSeq := { "VL","BA","CP" }
+	dbSelectArea("SE5")
+	SE5->(dbSetOrder(2))
+	For nLaco := 1 to len(aTipoSeq)
+		SE5->(dbSeek(xFilial("SE5") + aTipoSeq[nLaco] + SE2->E2_PREFIXO + SE2->E2_NUM + ;
+			SE2->E2_PARCELA + SE2->E2_TIPO) )
+
+		While !SE5->(Eof()) .And. ;
+				SE5->E5_FILIAL == xFilial("SE5") .And. ;
+				SE5->E5_TIPODOC == aTipoSeq[nLaco] .And. ;
+				SE5->E5_PREFIXO == SE2->E2_PREFIXO .And. ;
+				SE5->E5_NUMERO == SE2->E2_NUM .And. ;
+				SE5->E5_PARCELA == SE2->E2_PARCELA .And. ;
+				SE5->E5_TIPO == SE2->E2_TIPO
+
+			If SE5->E5_CLIFOR <> SE2->E2_FORNECE .or. ;
+					SE5->E5_LOJA <> SE2->E2_LOJA
+				dbskip()
+				Loop
+			EndIf
+			nSequencia := MAX(VAL(SE5->E5_SEQ),nSequencia)
+			SE5->( dbSkip() )
+		Enddo
+	Next
+	nSequencia++
+
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Grava registro referente a movimenta‡„o banc ria ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	Reclock("SE5",.T.)
+	Replace E5_FILIAL  With Xfilial("SE2")
+	Replace E5_PREFIXO With SE2->E2_PREFIXO
+	Replace E5_NUMERO  With SE2->E2_NUM
+	Replace E5_PARCELA With SE2->E2_PARCELA
+	Replace E5_CLIFOR  With SE2->E2_FORNECE
+	Replace E5_LOJA    With SE2->E2_LOJA
+	Replace E5_BENEF   With SE2->E2_NOMFOR
+	Replace E5_VALOR   With SE2->E2_VALLIQ
+	Replace E5_DATA    With SE2->E2_BAIXA
+	Replace E5_HISTOR  With STR0009  //"Valor pago s /Titulo"
+	Replace E5_NATUREZ With SE2->E2_NATUREZ
+	Replace E5_RECPAG  With "P"
+	Replace E5_TIPO    With SE2->E2_TIPO
+	Replace E5_DOCUMEN With SE2->E2_NUMBOR
+	Replace E5_DTDIGIT With dDataBase
+	Replace E5_TIPODOC With "VL"
+	Replace E5_DTDISPO With dBaixa
+	Replace E5_MOTBX   With "DEB"
+	Replace E5_VLMOED2 With xMoeda(SE2->E2_VALLIQ,1,SE2->E2_MOEDA,SE2->E2_BAIXA)
+	Replace E5_BANCO   With cBanco
+	Replace E5_AGENCIA With cAgencia
+	Replace E5_CONTA   With cConta
+	Replace E5_SEQ 	 With StrZero(nSequencia,2,0)
+	Replace E5_VLMULTA With nMulta
+	Replace E5_VLJUROS With nJuros+nVendor
+	Replace E5_VLDESCO With nDescont
+	MsUnlock()
+
+	AtuSalBco( cBanco,cAgencia,cConta,SE5->E5_DATA,SE5->E5_VALOR,"-")
+
+	nValorTotal += SE5->E5_VALOR
+
+	If lF300SE5
+		ExecBlock("F300SE5",.F.,.F.)
+	Endif
+
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Grava registro referente a movimenta‡„o banc ria ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	IF nJuros+nVendor != 0
+		Reclock("SE5",.T.)
+		Replace E5_FILIAL  With Xfilial("SE5")
+		Replace E5_PREFIXO With SE2->E2_PREFIXO
+		Replace E5_NUMERO  With SE2->E2_NUM
+		Replace E5_PARCELA With SE2->E2_PARCELA
+		Replace E5_CLIFOR  With SE2->E2_FORNECE
+		Replace E5_LOJA    With SE2->E2_LOJA
+		Replace E5_BENEF   With SE2->E2_NOMFOR
+		Replace E5_VALOR   With nJuros+nVendor
+		Replace E5_DATA    With SE2->E2_BAIXA
+		Replace E5_HISTOR  With STR0010		//"Juros pagos s/Titulo"
+		Replace E5_NATUREZ With SE2->E2_NATUREZ
+		Replace E5_RECPAG  With "P"
+		Replace E5_TIPO    With SE2->E2_TIPO
+		Replace E5_DOCUMEN With SE2->E2_NUMBOR
+		Replace E5_DTDIGIT With dDataBase
+		Replace E5_TIPODOC With "JR"
+		Replace E5_DTDISPO With dBaixa
+		Replace E5_MOTBX   With "DEB"
+		Replace E5_VLMOED2 With xMoeda(nJuros,1,SE2->E2_MOEDA,SE2->E2_BAIXA)+nVendor
+		Replace E5_BANCO   With cBanco
+		Replace E5_AGENCIA With cAgencia
+		Replace E5_CONTA   With cAgencia
+		MsUnlock( )
+	Endif
+
+	IF nDescont != 0
+		Reclock("SE5",.T.)
+		Replace E5_FILIAL  With Xfilial("SE5")
+		Replace E5_PREFIXO With SE2->E2_PREFIXO
+		Replace E5_NUMERO  With SE2->E2_NUM
+		Replace E5_PARCELA With SE2->E2_PARCELA
+		Replace E5_CLIFOR  With SE2->E2_FORNECE
+		Replace E5_LOJA    With SE2->E2_LOJA
+		Replace E5_BENEF   With SE2->E2_NOMFOR
+		Replace E5_VALOR   With nDescont
+		Replace E5_DATA    With SE2->E2_BAIXA
+		Replace E5_HISTOR  With STR0011  //"Desconto s/Pgto de Titulo"
+		Replace E5_NATUREZ With SE2->E2_NATUREZ
+		Replace E5_RECPAG  With "P"
+		Replace E5_TIPO    With SE2->E2_TIPO
+		Replace E5_DOCUMEN With SE2->E2_NUMBOR
+		Replace E5_DTDIGIT With dDataBase
+		Replace E5_TIPODOC With "DC"
+		Replace E5_DTDISPO With dBaixa
+		Replace E5_MOTBX   With "DEB"
+		Replace E5_VLMOED2 With xMoeda(nJuros,1,SE2->E2_MOEDA,SE2->E2_BAIXA)
+		Replace E5_BANCO   With cBanco
+		Replace E5_AGENCIA With cAgencia
+		Replace E5_CONTA   With cConta
+		MsUnlock( )
+	Endif
+
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Atualiza o Cadastro de Fornecedores     ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	dbSelectArea("SA2")
+	dbSeek(Xfilial("SA2")+SE2->E2_FORNECE+SE2->E2_LOJA)
+	RecLock("SA2")
+	IF nSaldoCru >= SA2->A2_SALDUP
+		nSalDup := 0
+	ELSE
+		nSalDup := SA2->A2_SALDUP - nSaldoCru
+	Endif
+	Replace A2_SALDUP   With nSalDup
+	Replace A2_SALDUPM With A2_SALDUPM - xMoeda(nSaldoCru,SE2->E2_MOEDA,Val(&('GetMv("MV_MCUSTO")')),SE2->E2_VENCREA)
+	MsUnlock( )
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Verifica qual o Lanc Padr„o que ser  utilizado      ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	dbSelectArea("SE2")
+	nC++
+
+	// Header do cProva
+	IF nC == 1 .And. lPadrao .and. lContabiliza
+		nHdlPrv:=HeadProva(cLote,"FINA300",Substr(cUsuario,7,6),@cArquivo)
+		lCabec := .T.
+	Endif
+
+	IF lPadrao .and. lContabiliza .and. lCabec
+		Reclock("SE5")
+		Replace E5_LA  With "S"+Substr(E5_LA,2,1)
+		nTotal+=DetProva(nHdlPrv,cPadrao,"FINA300",cLote)
+		MsUnlock()
+	Endif
+Enddo
+
+dbSelectArea("SE2")
+dbGoBottom()
+dbSkip()
+dbSelectArea("SE5")
+dbGoBottom()
+dbSkip()
+
+VALOR := nValorTotal
+
+IF lPadrao .and. lContabiliza .and. lCabec
+	nTotal+=DetProva(nHdlPrv,cPadrao,"FINA300",cLote)
+Endif
+
+IF lPadrao .and. lContabiliza .and. lCabec
+	RodaProva(nHdlPrv,nTotal)
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Envia para Lancamento Contabil                      ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	lDigita:=IIF(mv_par01==1,.T.,.F.)
+	lAglut :=IIF(mv_par02==1,.T.,.F.)
+	cA100Incl(cArquivo,nHdlPrv,2,cLote,lDigita,lAglut)
+Endif
+
+VALOR := 0
+
+dbSelectArea("SE2")
+dbSeek(xFilial())
+
+dbSelectArea("SE5")
+dbSeek(xFilial())
+
+FCLOSE(nHdlBco)
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Utilizado para renomear o arquivo processado        ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+If lFa300Ren
+   ExecBlock("FA300REN", .F., .F.)
+End   
+
+Return
+
+/*/
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
+±±³Fun‡…o    ³fA300Rejei³ Autor ³ Vicente Sementilli    ³ Data ³ 29/11/95 ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Descri‡…o ³Trata titulo rejeitado.                                     ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Sintaxe   ³fa300Rejei                                                  ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³ Uso      ³ Generico                                                   ³±±
+±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+/*/
+// Substituido pelo assistente de conversao do AP6 IDE em 29/04/05 ==> Function fa300Rejei()
+Static Function fa300Rejei()
+Local cAlias := Alias( ), lRet := .T.
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ 00-Cr‚dito efetuado                 			  ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+If "00" $ cRetorno
+	lRet := .F.
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ BD-Pagamento Agendado 										³
+	//³ BE-Pagto Agendado c/Forma Alterada p/ OP				³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+ElseIf !("BD" $ cRetorno .or. "BE" $ cRetorno .Or. "RJ" $ cRetorno)
+	Reclock( "SE2" )
+	SE2->E2_NUMBOR  := Space(Len(SE2->E2_NUMBOR))
+	SE2->E2_PORTADO := Space(Len(SE2->E2_PORTADO))
+	MsUnlock()
+EndIf      
+
+Return lRet

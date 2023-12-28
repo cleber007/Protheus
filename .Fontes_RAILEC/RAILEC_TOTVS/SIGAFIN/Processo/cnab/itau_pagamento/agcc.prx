@@ -1,0 +1,87 @@
+#include "protheus.ch"
+/*
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+±±ÉÍÍÍÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍ»±±
+±±ºPrograma  ³AGCC      ºAutor  ³                    º Data ³  19/05/11   º±±
+±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
+±±ºDesc.     ³ Programa para uso no SISPAG.                               º±±
+±±º          ³ (obs.: este programa estava sem cabeçalho de identificação.º±±
+±±º          ³ o mesmo foi feito por Donizete)                            º±±
+±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
+±±ºSolicit.  ³                                                            º±±
+±±ÌÍÍÍÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
+±±ºUso       ³                                                            º±±
+±±ÌÍÍÍÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
+±±º                    Manutencoes desde sua criacao                      º±±
+±±ÌÍÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
+±±ºData    ³Autor               ³Descricao                                º±±
+±±ÌÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
+±±º03/06/11³ Donizete           ³ Chamado 003228.                         º±±
+±±º        ³                    ³                                         º±±
+±±º        ³                    ³                                         º±±
+±±ÈÍÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¼±±
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+*/
+User Function AGCC()
+
+Local _cBanco	:= ""
+Local _cAgencia	:= ""
+Local _cConta	:= ""
+
+
+IF EMPTy(SE2->E2_BANCO)
+	
+	IF SA2->A2_BANCO == SEE->EE_CODIGO
+		cAGCC := STRZERO(VAL(SUBS(ALLTRIM(SA2->A2_AGENCIA),1,4)),5)+SPACE(01)+;
+		STRZERO(  VAL( SUBSTR( ALLTRIM(SA2->A2_NUMCON),1,8) ),12)+ ;
+		SPACE(01)+SUBSTR(ALLTRIM(SA2->A2_NUMCON),9,1)
+		Alert("Primeira Condição Fornecedor " + SA2->A2_COD + " - " + SA2->A2_NREDUZ + "->AGCC "+cAGCC)
+		
+	ELSEIF LEN(ALLTRIM(SA2->A2_AGENCIA)) < 4
+		
+		Alert("Não envie o arquivo ao banco, chame o Administrador e informe ocorrência 1")
+		cAGCC := STRZERO(VAL(SA2->A2_AGENCIA),5)+SPACE(01)+;
+		STRZERO(VAL(ALLTRIM(SA2->A2_NUMCON)),12)+;
+		SPACE(01)+SUBS(ALLTRIM(SA2->A2_AGENCIA),5,1)
+	    Alert("Segunda Condição Fornecedor " + SA2->A2_COD + " - " + SA2->A2_NREDUZ + "->AGCC "+cAGCC)
+	ELSE
+
+		// Alterado: 17/06/11
+		cAGCC := STRZERO(VAL(SUBS(SA2->A2_AGENCIA,1,4)),5)+SPACE(01)+;
+		STRZERO(VAL(ALLTRIM(SUBS(SA2->A2_NUMCON,1,8))),12)+SPACE(01)+;
+		SUBS(SA2->A2_NUMCON,9,1)
+	ENDIF
+	
+ELSEIF !EMPTY(SE2->E2_BANCO)
+
+	IF SE2->E2_BANCO == SEE->EE_CODIGO
+		
+		cAGCC := STRZERO(VAL(SUBS(ALLTRIM(SE2->E2_AGENCIA),1,4)),5)+SPACE(01)+;
+		STRZERO(VAL(substr(ALLTRIM(SE2->E2_NUMCON),1,8)),12)+ SPACE(01)+substr(ALLTRIM(SE2->E2_NUMCON),9,1);
+		
+	ELSEIF LEN(ALLTRIM(SE2->E2_AGENCIA))<4
+		Alert("Não envie o arquivo ao banco, chame o Administrador e informe ocorrência 2")
+		cAGCC := STRZERO(VAL(SUBS(SE2->E2_AGENCIA,1,4)),5)+SPACE(01)+;
+		STRZERO(VAL(ALLTRIM(SE2->E2_NUMCON)),12)+;
+		SPACE(01)+SUBS(ALLTRIM(SE2->E2_AGENCIA),5,1)
+		Alert("Fornecedor " + SA2->A2_COD + " - " + SA2->A2_NREDUZ + "->AGCC "+cAGCC)
+
+	ELSE
+		
+		cAGCC := STRZERO(VAL(SUBS(SE2->E2_AGENCIA,1,4)),5)+SPACE(01)+;
+		STRZERO(VAL(ALLTRIM(SUBS(SE2->E2_NUMCON,1,8))),12)+SPACE(01)+;
+		SUBS(SE2->E2_NUMCON,9,1)
+		
+	ENDIF
+	
+ENDIF
+               
+
+
+
+
+// Substituido pelo assistente de conversao do AP5 IDE em 19/11/99 ==> __Return(cCampo)
+Return(cAGCC)        // incluido pelo assistente de conversao do AP5 IDE em 19/11/99
+  

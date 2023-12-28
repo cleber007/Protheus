@@ -1,0 +1,767 @@
+#include "Rwmake.ch"
+#include "ap5mail.ch"
+#INCLUDE "GPER340.CH"
+/*
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
+±±³Fun‡…o    ³ GPE340R  ³ Autor ³ R.H. - Marcos Stiefano³ Data ³ 15.04.96 ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Descri‡…o ³ Relacao de Cargos e Salarios                               ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Sintaxe   ³ GPER340(void)                                              ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Parametros³                                                            ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³ Uso      ³ Generico                                                   ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³                     ATUALIZACOES SOFRIDAS DESDE A CONSTRU€AO INICIAL. ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Programador ³ Data   ³ BOPS ³  Motivo da Alteracao                     ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³ Mauro      ³12/01/01³------³ Nao estava Filtrando categoria na Impress³±±
+±±³ Silvia     ³04/03/02³------³ Ajustes na Picture para Localizacoes    .³±±
+±±³ Natie      ³05/09/02³------³ Acerto devido mudanca C.custo c/tam 20   ³±±
+±±³ Emerson    ³16/10/02³------³ Somente quebrar C.C. se nao quebrou Fil. ³±±
+±±³ Mauro      ³13/11/02³060517³ Saltar Pagina a cada Quebra de Filial    ³±±
+±±ÀÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
+User Function GPE340R()
+
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Define Variaveis Locais (Basicas)                            ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	Local cString := "SRA"        // alias do arquivo principal (Base)
+	Local aOrd    := {STR0001,STR0002,OemtoAnsi(STR0003),STR0029,STR0030,OemtoAnsi(STR0031)}    //"C.Custo + Matricula "###"C.Custo + Nome"###"C.Custo + Fun‡„o"###"Nome"###"Matricula"###"Fun‡„o"
+	Local cDesc1  := STR0004		//"Rela‡„o de Cargos e Salario."
+	Local cDesc2  := STR0005		//"Ser  impresso de acordo com os parametros solicitados pelo"
+	Local cDesc3  := STR0006		//"usuario."
+
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Define Variaveis Private(Basicas)                            ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	Private aReturn  := {STR0007,1,STR0008,2,2,1,"",1 }	//"Zebrado"###"Administra‡„o"
+	Private NomeProg := "GPE340R"
+	Private aLinha   := { }
+	Private nLastKey := 0
+	Private cPerg    := "GPR340"
+
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Variaveis Utilizadas na funcao IMPR                          ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	Private Titulo   := "RELA€ŽO DE NOMES E FUN€OES"
+	Private AT_PRG   := "GPE340R"
+	Private Wcabec0  := 2
+	Private cabec1   := "FI  MATRIC NOME                           ADMISSAO   FUNCAO                  " //MAO DE       SALARIO   PERC.   PERC.   PERC."
+	Private cabec2   := "                                                                             " //         OBRA         NOMINAL  C.CUSTO  FILIAL  EMPRESA"
+	Private CONTFL   := 1
+	Private nLin     := 80
+	Private nTipo    := 18
+	Private nTamanho := "G"
+	Private Limite   := 220
+	Private cbcont     := 00
+	Private Tamanho  := "P"
+	Private m_pag      := 01
+
+	cUsers   := GetMv("MV_RESPRH")
+	aGrupos := FwsFUsrGrps(__cuserid)
+	nPos := 0
+	nPos := aScan(aGrupos, {|x| x $ "000000"})
+
+
+	If !("/"+Trim(cUserName)+"/" $ cUsers) .and. nPos=0
+		Alert(Trim(cUserName)+", Voce não permissão para acessar esse relatório!!! (MV_RESPRH)")
+		Return
+	EndIf
+
+	//FI C.CUSTO	MATRIC NOME             				  ADMISSAO FUNCAO 				" //		 MAO DE		  SALARIO	PERC.   PERC.	 PERC."
+	// 																												 OBRA 		  NOMINAL  C.CUSTO  FILIAL  EMPRESA"
+	//01 123456789 123456 123456789012345678901234567890 01/01/01 1234 12345678901234567890 " // IND   99.999.999,99	999,99  999,99   999,99
+
+
+
+	//+-----------------------------------------------------------+
+	//¦ CRIA ARQUIVO TEMPORARIO                                   ¦
+	//+-----------------------------------------------------------+
+	// Estrutura do Arquivo Temporario
+
+	aStru := {}
+
+	aadd(aStru , {'T_FILIAL'  ,'C', 02,0} )
+	aadd(aStru , {'T_MATR'  ,'C', 06,0} )
+	aadd(aStru , {'T_NOME'  ,'C', 50,0} )
+	aadd(aStru , {'T_CODFUNC'  ,'C', 06,0} )
+	aadd(aStru , {'T_FUNC'  ,'C', 40,0} )
+	aadd(aStru , {'T_CODCARG'  ,'C', 06,0} )
+	aadd(aStru , {'T_CARG'  ,'C', 40,0} )
+	aadd(aStru , {'T_SALA'  ,'N', 12,2} )
+	aadd(aStru , {'T_CODI'  ,'C', 09,0} )
+	aadd(aStru , {'T_CCUS'  ,'C', 40,0} )
+	aadd(aStru , {'T_ADMI'  ,'D', 08,0} )
+	aadd(aStru , {'T_NASC'  ,'C', 10,0} )
+	aadd(aStru , {'T_ESTCIVI'  ,'C', 15,0} )
+
+	aadd(aStru , {'T_CBO'   ,'C', 06,0} )
+	aadd(aStru , {'T_SEXO'  ,'C', 03,0} )
+	aadd(aStru , {'T_NATU'  ,'C', 02,0} )
+	aadd(aStru , {'T_FORM'  ,'C', 30,0} )
+	aadd(aStru , {'T_APRE'  ,'C', 01,0} )
+	aadd(aStru , {'T_PCD'   ,'C', 01,0} )
+	aadd(aStru , {'T_DEMI'  ,'D', 08,0} )
+	aadd(aStru , {'T_MOTI'  ,'C', 100,0} )
+	aadd(aStru , {'T_TIPFUN'  ,'C', 40,0} )
+	aadd(aStru , {'T_HRSMES'  ,'N', 03,0} )
+	aadd(aStru , {'T_TEMPOC'  ,'N', 05,2} )
+	aadd(aStru , {'T_ENDER'  ,'C', 40,0} )
+	aadd(aStru , {'T_BAIRRO'  ,'C', 20,0} )
+	aadd(aStru , {'T_NUM'  ,'C', 06,0} )
+	aadd(aStru , {'T_ESTADO'  ,'C', 15,0} )
+	aadd(aStru , {'T_CIDADE'  ,'C', 06,0} )
+	aadd(aStru , {'T_CEP'  ,'C', 15,0} )
+	aadd(aStru , {'T_CPF'   ,'C', 11,0} )
+	aadd(aStru , {'T_RG'  ,'C', 15,0} )
+	aadd(aStru , {'T_PIS'  ,'C', 15,0} )
+	aadd(aStru , {'T_ELEITOR'  ,'C', 15,0} )
+	aadd(aStru , {'T_CTPS'  ,'C', 18,0} )
+	aadd(aStru , {'T_RESERVI'  ,'C', 15,0} )
+	aadd(aStru , {'T_LINKEDI'  ,'C', 25,0} )
+	aadd(aStru , {'T_FACEBOO'  ,'C', 25,0} )
+	aadd(aStru , {'T_EMAIL' ,'C', 60,0} )
+	aadd(aStru , {'T_FONE'  ,'C', 15,0} )
+	aadd(aStru , {'T_CEL'  ,'C', 15,0} )
+	aadd(aStru , {'T_BANCO'  ,'C', 15,0} )
+	aadd(aStru , {'T_CONTA'  ,'C', 15,0} )
+	aadd(aStru , {'T_MAE'    ,'C', 45,0} )
+	aadd(aStru , {'T_RNE'    ,'C', 15,0} )
+
+	//cArqTemp := CriaTrab(aStru , .t.)
+	//dbUseArea(.T.,,cArqTemp,'TMP',.f.)
+	//DBSELECTAREA("TMP")
+
+	oGetTab := FWTemporaryTable():New("TMP",)
+	oGetTab:SetFields(aStru)
+	//oGetTab:AddIndex("01", {"T_ESTAD"} )
+	oGetTab:Create()
+	dbSelectArea("TMP")
+
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Envia controle para a funcao SETPRINT                        ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	wnrel:="GPE340R"            //Nome Default do relatorio em Disco
+	wnrel:=SetPrint(cString,wnrel,cPerg,Titulo,cDesc1,cDesc2,cDesc3,.F.,aOrd,,nTamanho)
+
+	If nLastKey = 27
+		Return
+	EndIf
+
+	SetDefault(aReturn,cString)
+
+	If nLastKey = 27
+		Return
+	EndIf
+
+	RptStatus({|lEnd| GP340Imp(@lEnd,wnRel,cString)},Titulo)
+
+Return
+
+/*
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
+±±³Fun‡…o    ³ GP340IMP ³ Autor ³ R.H.                  ³ Data ³ 15.04.96 ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Descri‡…o ³ ImpressÆo da Relacao de Cargos e Salarios                  ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Sintaxe   ³ GP340IMP(lEnd,WnRel,cString)                               ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³ Uso      ³ Generico                                                   ³±±
+±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
+Static Function GP340IMP(lEnd,WnRel,cString)
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Define Variaveis Locais (Programa)                           ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	Local cAcessaSRA := &("{ || " + ChkRH("GPER340","SRA","2") + "}")
+
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Define Variaveis Private(Programa)                           ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	Private aInfo     := {}
+	Private aCodFol   := {}
+	Private aRoteiro  := {}
+
+	Pergunte("GPR340",.F.)
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Carregando variaveis mv_par?? para Variaveis do Sistema.	 ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	nOrdem	    := aReturn[8]
+	cFilDe	    := mv_par01									//  Filial De
+	cFilAte	    := mv_par02									//  Filial Ate
+	cCcDe 	    := mv_par03									//  Centro de Custo De
+	cCcAte	    := mv_par04									//  Centro de Custo Ate
+	cMatDe	    := mv_par05									//  Matricula De
+	cMatAte	    := mv_par06									//  Matricula Ate
+	cNomeDe	    := mv_par07									//  Nome De
+	cNomeAte    := mv_par08									//  Nome Ate
+	cFuncDe	    := mv_par09									//  Funcao De
+	cFuncAte    := mv_par10									//  Funcao Ate
+	cSituacao   := mv_par11									//  Situacao Funcionario
+	cCategoria  := mv_par12									//  Categoria Funcionario
+	lSalta	    := If( mv_par13 == 1 , .T. , .F. )		//  Salta Pagina Quebra C.Custo
+
+	Titulo := STR0012			//"RELACAO DE CARGOS E SALARIOS "
+	If nOrdem==1
+		Titulo += STR0013		//"(C.CUSTO + MATRICULA)"
+	ElseIf nOrdem==2
+		Titulo +=STR0014		//"(C.CUSTO + NOME)"
+	ElseIf nOrdem==3
+		Titulo +=STR0015		//"(C.CUSTO + FUNCAO)"
+	ElseIf nOrdem == 4
+		Titulo +=STR0034		//"(NOME)"
+	ElseIf nOrdem == 5
+		Titulo +=STR0035		//"(MATRICULA)"
+	ElseIf nOrdem == 6
+		Titulo +=STR0036		//"(FUNCAO)"
+	EndIf
+	DbSelectArea("SI3")
+	DbSetOrder(1)
+	// Sempre na ordem de Centro de Custo + Matricula para totalizar
+	_TTPCD:=_TTAPE:=_TTFUN:=0
+	dbSelectArea( "SRA" )
+	dbSetOrder(2)
+	dbGoTop()
+
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Carrega Regua Processamento											  ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	SetRegua(RecCount())
+
+	If nOrdem == 1
+		dbSetOrder(2)
+		dbSeek(cFilDe + cCcDe + cMatDe,.T.)
+	ElseIf nOrdem == 2
+		dbSetOrder(8)
+		dbSeek(cFilDe + cCcDe + cNomeDe,.T.)
+	ElseIf nOrdem == 3
+		cIndCond := "SRA->RA_FILIAL + SRA->RA_CC + SRA->RA_CODFUNC"
+		cArqNtx := "IATRB01"//CriaTrab(Nil,.F.)
+		IndRegua("SRA",cArqNtx,cIndCond,,,STR0016)		//"Selecionando Registros..."
+		dbSeek(cFilDe + cCcDe,.T.)
+	ElseIf nOrdem == 4
+		dbSetOrder(3)
+		dbSeek(cFilDe + cNomeDe,.T.)
+	ElseIf nOrdem == 5
+		dbSetOrder(1)
+		dbSeek(cFilDe + cMatDe,.T.)
+	ElseIf nOrdem == 6
+		dbSetOrder(7)
+		dbSeek(cFilDe + cFuncDe,.T.)
+	EndIf
+
+	cCANT := SRA->RA_CC
+	_TTFUNCC:=0
+	_PROD:=_PROD2:=""
+	While !Eof()
+		//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+		//³ Movimenta Regua Processamento										  ³
+		//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+		IncRegua()
+
+		If lEnd
+			@Prow()+1,0 PSAY cCancel
+			Exit
+		EndIf
+
+		//-- Filtragem dos Parametros Selecionados
+		If ( SRA->RA_FILIAL < cFilDe )  .Or. ( SRA->RA_FILIAL > cFilAte ) .Or. ;
+		( SRA->RA_NOME < cNomeDe )  .Or. ( SRA->RA_NOME > cNomeAte ) .Or. ;
+		( SRA->RA_MAT < cMatDe )   .Or. ( SRA->RA_MAT > cMatAte ) .Or.;
+		(SRA->RA_CC < cCcDe) 		.Or. (SRA->RA_CC > cCcAte) .Or.;
+		(SRA->RA_CODFUNC < cFuncDe) .Or. (SRA->RA_CODFUNC > cFuncAte)
+			dbSkip()
+			Loop
+		EndIf
+
+		//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+		//³ Testa Situacao do Funcionario na Folha						 ³
+		//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+		If !( SRA->RA_SITFOLH $ cSituacao ) .Or. !( SRA->RA_CATFUNC $ cCategoria )
+			dbSelectArea( "SRA" )
+			dbSkip()
+			Loop
+		EndIf
+
+		//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+		//³ Consiste controle de acessos e filiais validas               ³
+		//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+		If !(SRA->RA_FILIAL $ fValidFil()) .Or. !Eval(cAcessaSRA)
+			dbSkip()
+			Loop
+		EndIf
+
+		If nLin > 60
+			nLin := Cabec(Titulo,Cabec1,Cabec2,NomeProg,Tamanho,nTipo)
+			nLin += 1
+			If nOrdem < 4
+				SI3->(DbSeek(xFilial("SI3")+SRA->RA_CC))
+				@nLin,000 PSAY "Centro de Custo :"+Trim(SRA->RA_CC)+" - "+SI3->I3_DESC
+				nLin += 2
+			EndIf
+		EndIf
+
+		If SRA->RA_CC <> cCANT .And. nOrdem < 4
+			@ nLin,042 PSAY "Total de Funcionarios do CCusto ...."+STRZERO(_TTFUNCC,4,0)
+			nLin += 1
+			@nLin,000 PSAY Repli("-",Limite)
+			nLin += 1
+			_TTFUNCC:=0
+			If lSalta
+				nLin := Cabec(Titulo,Cabec1,Cabec2,NomeProg,Tamanho,nTipo)
+				nLin += 1
+			EndIf
+			SI3->(DbSeek(xFilial("SI3")+SRA->RA_CC))
+			@nLin,000 PSAY "Centro de Custo :"+Trim(SRA->RA_CC)+" - "+SI3->I3_DESC
+			nLin += 2
+		EndIf
+
+		DET :=""
+		DET := SRA->RA_FILIAL+"  "+SRA->RA_MAT + " "
+		DET += SubStr(SRA->RA_NOMECMP,1,50)+" "+PadR(DTOC(SRA->RA_ADMISSA),10)
+		DET += " "+SRA->RA_CODFUNC+"-"+DESCFUN(SRA->RA_CODFUNC,SRA->RA_FILIAL)+" "+SRA->RA_NATURAL
+		@nLin,000 PSAY DET
+		nLin += 1
+
+
+		If nOrdem < 4
+			_TTFUNCC++      // TT DE FUNCIONARIOS SE DO CENTRO DE CUSTO
+		ENDIF
+
+		cCANT := SRA->RA_CC
+		IF SM0->M0_CODIGO="06"
+			_TIPOFUN:=POSICIONE("SRJ",1,XFILIAL("SRJ")+SRA->RA_CODFUNC,"RJ_TIPO")
+			_xxDESCR:=_TipoFun+"-"+ALLTRIM(Posicione("SX5",1,xFilial("SX5")+"RH"+_TipoFun,"X5_DESCRI"))
+		ELSE
+			_TIPOFUN:=" "
+			_xxDESCR:=" "
+		ENDIF    
+
+		_CODCBO :=POSICIONE("SRJ",1,XFILIAL("SRJ")+SRA->RA_CODFUNC,"RJ_CODCBO")   // NOVO CAMPO SOLICITADO POR AMANDA
+
+		DBSELECTAREA("tmp")
+		RECLOCK("TMP",.T.)
+		T_FILIAL:=SRA->RA_FILIAL
+		T_MATR:=SRA->RA_MAT
+		T_NOME:=SUBSTR(SRA->RA_NOMECMP,1,50)
+		T_CODFUNC:=SRA->RA_CODFUNC
+		T_FUNC:=DESCFUN(SRA->RA_CODFUNC,SRA->RA_FILIAL)
+		T_CBO :=_CODCBO
+		T_CODCARG:=SRA->RA_CARGO
+		T_CARG   :=Substr(fDesc("SQ3",SRA->RA_CARGO,"SQ3->Q3_DESCSUM"),1,40)
+		T_NATU:=SRA->RA_NATURAL
+		T_ADMI:=SRA->RA_ADMISSA
+		T_SALA:=SRA->RA_SALARIO
+		T_CODI:=SRA->RA_CC
+		T_CCUS:=POSICIONE("CTT",1,XFILIAL("CTT")+SRA->RA_CC,"CTT_DESC01")
+		T_FORM:=FDESC("X26","26"+SRA->RA_GRINRAI,"X5_DESCRI")
+		T_CPF :=SRA->RA_CIC
+		T_EMAIL:=SRA->RA_EMAIL
+		T_DEMI :=SRA->RA_DEMISSA
+		T_MOTI :=SRA->RA_RESCRAI+"-"+TABELA("27",SRA->RA_RESCRAI,.F.)
+		T_NASC :=DTOC(SRA->RA_NASC)
+		T_SEXO :=IIF(SRA->RA_SEXO="M","MAS","FEM")
+		T_TIPFUN:=_xxDESCR
+		//T_ESTCIVI:= Substr(TrmDesc("SX5","33"+SRA->RA_ESTCIVI,"SX5->X5_DESCRI"),1,15)
+
+		aGetSX5 := FWGetSX5("33")
+		nPosChv := Ascan(aGetSX5, {|x| Alltrim(x[3]) == SRA->RA_ESTCIVI})
+		cDesSX5 := ""
+		If !Empty(nPosChv)
+			cDesSX5 := aGetSX5[nPosChv,04]
+		EndIf
+		T_ESTCIVI:= Substr(cDesSX5,1,15)
+
+		IF SRA->RA_CATEG="07"                    // MENOR APRENDIZ
+			_TTAPE++
+			T_APRE:="S"
+			_PROD:=_PROD+ ("Data__Adm : "+ DTOC(SRA->RA_ADMISSA)+"_  Matr: "+SRA->RA_MAT+"__"+ALLTRIM(SUBSTR(SRA->RA_NOMECMP,1,50)) +CHR(13) + CHR(10))
+		ELSEIF SRA->RA_CTPCD="1" //!(SRA->RA_TPDEFFI$" 06")        // PCD (PORTADOR DEF FISICA)
+			_TTPCD++
+			T_PCD :="S"
+			_PROD2:=_PROD2+ ("Data__Adm : "+ DTOC(SRA->RA_ADMISSA)+"_  Matr: "+SRA->RA_MAT+"__"+ALLTRIM(SUBSTR(SRA->RA_NOMECMP,1,50)) +CHR(13) + CHR(10))
+		ELSE
+			_TTFUN++
+		ENDIF
+		T_HRSMES:=SRA->RA_HRSMES	
+		T_TEMPOC:=((DDATABASE-SRA->RA_ADMISSA)/365)	
+
+		T_RG     :=SRA->RA_RG
+		T_PIS    :=SRA->RA_PIS
+		T_ELEITOR:=SRA->RA_TITULOE
+		T_CTPS   :=SRA->RA_NUMCP+"-"+SRA->RA_SERCP+"/"+SRA->RA_UFCP
+		T_RESERVI:=SRA->RA_RESERVI
+		T_FONE   :=SRA->RA_TELEFON	
+		T_CEL    :=SRA->RA_NUMCELU
+		T_CEP    :=SRA->RA_CEP
+
+		T_ENDER   :=SRA->RA_ENDEREC
+		T_BAIRRO  :=SRA->RA_BAIRRO
+		T_NUM     :=SRA->RA_NUMENDE
+		T_ESTADO  :=SRA->RA_ESTADO
+		T_CIDADE  :=SRA->RA_MUNICIP
+
+		T_BANCO:=SRA->RA_BCDEPSA
+		T_CONTA:=SRA->RA_CTDEPSA
+		T_MAE  :=SRA->RA_MAE
+		T_RNE  :=SRA->RA_RNE
+
+
+		MSUNLOCK()
+
+		dbSelectArea( "SRA" )
+		dbSkip()
+	EndDo
+	IF _TTFUNCC>0
+		@ nLin,042 PSAY "Total de Funcionarios do CCusto ...."+STRZERO(_TTFUNCC,4,0)
+		nLin += 1
+	ENDIF
+
+	@nLin,000 PSAY Repli("-",132)
+	nLin += 1
+	@ nLin,001 PSAY "Total de Funcionarios Normais ...."+STRZERO(_TTFUN,4,0)
+	_XX1:=("Tot Funcion. : "+ STRZERO(_TTFUN,4,0) +CHR(13) + CHR(10))
+
+	nLin += 1
+	@ nLin,001 PSAY "Total de Funcionarios Aprendizes.."+STRZERO(_TTAPE,4,0)
+	_TEMP1:=(_TTAPE/_TTFUN)*100
+	@ nLin,040 PSAY _TEMP1 PICTURE "@E 999.99"
+	@ nLIN,047 PSAY "%"
+	_XX1:=_XX1+("Aprendizes : "+ STRZERO(_TTAPE,4,0)+"___"+TRANSFORM(_TEMP1,"@E 999.99")+" %" +CHR(13) + CHR(10))
+
+	nLin += 1
+	@ nLin,001 PSAY "Total de Funcionarios PCD ........"+STRZERO(_TTPCD,4,0)
+	_TEMP2:=(_TTPCD/_TTFUN)*100
+	@ nLin,040 PSAY _TEMP2 PICTURE "@E 999.99"
+	@ nLIN,047 PSAY "%"
+	_XX1:=_XX1+("PCDs : "+ STRZERO(_TTPCD,4,0)+"___"+TRANSFORM(_TEMP2,"@E 999.99")+" %" +CHR(13) + CHR(10))
+
+	@ nLin,055 PSAY ".TOT GERAL :"
+	@ nLin,068 PSAY _TTFUN+_TTAPE+_TTPCD PICTURE "999999"
+	@ nLin,075 PSAY "Funcion."
+	_XX1:=_XX1+("Total Geral : "+ STRZERO(_TTFUN+_TTAPE+_TTPCD,4,0) +CHR(13) + CHR(10))
+
+	IF (_TTAPE+_TTPCD) >0
+		cEmailTo :="amanda.lacerda@alubar.net,ana.carolina@alubar.net,rossiclea.baia@alubar.net,cristiani.sousa@alubar.net"
+		//cEmailTo :="macedojose@hotmail.com"
+		@ 1,1 to  300,300 DIALOG oDlg2 TITLE "E-Mail RH (ou branco para nao enviar) ..."
+		@ 30, 18 SAY "Para :"
+		@ 44, 10 GET cEmailTO  SIZE 130,18
+		@ 90, 90 BmpButton Type 1 Action Close(oDlg2)
+		Activate Dialog oDlg2 Centered
+		cEmailTo := ALLTRIM(cEmailTo)
+		IF !EMPTY(cEmailTo)	
+			RH3_ENVIAEMAIL()
+			ALERT("Email enviado!")
+		ENDIF   
+	ENDIF
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Termino do relatorio													  ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	dbSelectArea("SRA")
+	dbSetOrder(1)
+	Set Filter To
+
+	If nOrdem == 3
+		RetIndex( "SRA" )
+		fErase( cArqNtx + OrdBagExt() )
+	EndIf
+	SET DEVICE TO SCREEN
+
+	If aReturn[5]==1
+		dbCommitAll()
+		SET PRINTER TO
+		OurSpool(wnrel)
+	Endif
+
+	MS_FLUSH()
+
+
+	_GeraXls:=1
+	@ 1,1 to  150,300 DIALOG oDlg2 TITLE "Gera Planilha Excel ?"
+	@ 10, 49 SAY "1 - Nao"
+	@ 22, 49 SAY "2 - Sim"
+	@ 44, 49 GET _GeraXls PICTURE "99"
+	@ 60, 90 BmpButton Type 1 Action Close(oDlg2)
+	Activate Dialog oDlg2 Centered
+	IF _GeraXls=2
+
+		GeraExcel()
+
+		/*
+		DbSelectArea("TMP")
+		DBGOTOP()
+		//	COPY TO NOMES.CSV
+		_cArquivo := '\SYSTEM\TEMPDBF\NOMES.CSV'
+		Copy to &_cArquivo VIA "CTREECDX" 
+
+		//Copiando Arquivo criado .DBF para o diretorio específico no Cliente
+		IF CPYS2T("\SYSTEM\TEMPDBF\NOMES.CSV","C:\Relato\",.F.)
+		MSGINFO("Arquivo gerado com sucesso! C:\Relato\NOMES.CSV")
+		ELSE
+		ALERT("ERRO NA COPIA")
+		ENDIF
+		*/
+
+		/*	
+		_ARQ:= SUBSTR(CUSUARIO,7,3)+"_FUNC.CSV"
+		COPY TO &_ARQ
+		_arquivo:="G:\SYSTEM\"+_ARQ
+		If !File(_arquivo)
+		_arquivo:="F:\SYSTEM\"+_ARQ
+		EndIf
+		If ! ApOleClient( 'MsExcel' )
+		MsgStop( 'Excel não instalado' )
+		ELSE
+		oExcelApp := MsExcel():New()
+		oExcelApp:WorkBooks:Open( _arquivo )
+		oExcelApp:SetVisible(.T.)
+		ENDIF
+		*/
+ENDIF
+
+
+
+
+
+
+//	dbSelectArea('TMP')
+//	dbCloseArea()
+/*
+cArqTemp2 := cArqTemp + '.DTC'
+if file(cArqTemp2)
+	Delete File &cArqTemp2
+Endif
+*/
+dbSelectArea('SRA')
+DBSETORDER(1)
+DBGOTOP()
+
+Return
+
+
+//*************************
+STATIC FUNCTION RH3_ENVIAEMAIL()
+	//*************************
+
+	Local lResult   := .f.				// Resultado da tentativa de comunicacao com servidor de E-Mail
+	Local cTitulo1
+	Local lRelauth := GetNewPar("MV_RELAUTH",.F.)		// Parametro que indica se existe autenticacao no e-mail
+	Local cEmailBcc:= ""
+	Local cError   := ""
+
+	Local lRet	   := .F.
+	Local cFrom	   := GetMV("MV_RELACNT")
+	Local cConta   := GetMV("MV_RELACNT")
+	Local cSenhaX  := GetMV("MV_RELPSW")
+
+
+	cTitulo1 := "RH - Menores e PCD"
+	cMensagem:= "                             "  +CHR(13) + CHR(10)
+	cMensagem:= cMensagem + ".:: Data da Emissao....: "+DTOC(DDATABASE) + CHR(13) + CHR(10)
+	cMensagem:= cMensagem + "                             "+CHR(13) + CHR(10)
+	cMensagem:= cMensagem + _XX1
+	cMensagem:= cMensagem + "                             "+CHR(13) + CHR(10)
+
+	cMensagem:= cMensagem + "01-Menores Aprendizes  : "+ CHR(13) + CHR(10)
+	cMensagem:= cMensagem + _PROD
+	cMensagem:= cMensagem + "                             "+CHR(13) + CHR(10)
+	cMensagem:= cMensagem + "02-PCDs  : "+ CHR(13) + CHR(10)
+	cMensagem:= cMensagem + _PROD2
+
+
+	cMensagem:= cMensagem + "                             "+CHR(13) + CHR(10)
+	cMensagem:= cMensagem + "                             "+CHR(13) + CHR(10)
+	cMensagem:= cMensagem + "                             "+CHR(13) + CHR(10)
+	cMensagem:= cMensagem + "*Dados enviados a partir do relatorio #NOMES E FUNCOES."+CHR(13) + CHR(10)
+
+
+	cAnexo:= ""
+
+
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Tenta conexao com o servidor de E-Mail ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	CONNECT SMTP                         ;
+		SERVER 	 GetMV("MV_RELSERV"); 	// Nome do servidor de e-mail
+	ACCOUNT  GetMV("MV_RELACNT"); 	// Nome da conta a ser usada no e-mail
+	PASSWORD GetMV("MV_RELPSW") ; 	// Senha
+	RESULT   lResult             	// Resultado da tentativa de conexão
+
+	// Se a conexao com o SMPT esta ok
+	If lResult
+
+		// Se existe autenticacao para envio valida pela funcao MAILAUTH
+		If lRelauth
+			lRet := Mailauth(cConta,cSenhaX)
+		Else
+			lRet := .T.
+		Endif
+
+		If lRet
+			SEND MAIL FROM 	cFrom ;
+				TO 				cEmailTo;
+				BCC     		cEmailBcc;
+				SUBJECT 		cTitulo1;
+				BODY 			cMensagem;
+				ATTACHMENT  	cAnexo  ;
+				RESULT lResult
+
+
+			If !lResult
+				//Erro no envio do email
+				GET MAIL ERROR cError
+				MsgStop("Erro no envio de e-mail","erro de envio")
+			ELSE
+				DISCONNECT SMTP SERVER
+			Endif
+		Else
+			GET MAIL ERROR cError
+			MsgStop("Erro de autenticação","Verifique a conta e a senha para envio")
+		Endif
+
+		DISCONNECT SMTP SERVER
+	Else
+		//Erro na conexao com o SMTP Server
+		GET MAIL ERROR cError
+		MsgStop("Erro de CONEXAO COM SMTP","ERRO DE CONEXAO COM SMTP...")
+	Endif
+
+RETURN
+
+
+///////////////////////////
+STATIC FUNCTION GeraExcel()
+	///////////////////////////
+	Local oExcel 	:= FWMSEXCEL():New()
+	Local cWorkSheet := "RELAÇÃO DE NOMES E FUNÇÕES"
+	Local cTable := "Dados"
+	Local cTipo   := "*.xml | *.xmls |"
+	PRIVATE _arquivo := ""
+
+	//Nome da Worksheet
+	oExcel:AddworkSheet(cWorkSheet)
+	//Nome da Tabela
+	oExcel:AddTable (cWorkSheet,cTable)
+
+	oExcel:AddColumn(cWorkSheet, cTable, "T_FILIAL"  ,1,1)
+	oExcel:AddColumn(cWorkSheet, cTable, "T_MATR"    ,1,1)
+	oExcel:AddColumn(cWorkSheet, cTable, "T_NOME"    ,1,1)
+	oExcel:AddColumn(cWorkSheet, cTable, "T_CODFUNC" ,1,1)
+	oExcel:AddColumn(cWorkSheet, cTable, "T_FUNC"    ,1,1)
+	oExcel:AddColumn(cWorkSheet, cTable, "T_CODCARG" ,1,1)
+	oExcel:AddColumn(cWorkSheet, cTable, "T_CARG"    ,1,1)
+	oExcel:AddColumn(cWorkSheet, cTable, "T_SALA"    ,3,2)
+	oExcel:AddColumn(cWorkSheet, cTable, "T_CODI"    ,1,1)
+	oExcel:AddColumn(cWorkSheet, cTable, "T_CCUS"    ,1,1)
+	oExcel:AddColumn(cWorkSheet, cTable, "T_ADMI"    ,1,4)
+	oExcel:AddColumn(cWorkSheet, cTable, "T_NASC"    ,1,1)
+	oExcel:AddColumn(cWorkSheet, cTable, "T_ESTCIVI" ,1,1)
+	oExcel:AddColumn(cWorkSheet, cTable, "T_CBO"     ,1,1)
+	oExcel:AddColumn(cWorkSheet, cTable, "T_SEXO"    ,1,1)
+	oExcel:AddColumn(cWorkSheet, cTable, "T_NATU"    ,1,1)
+	oExcel:AddColumn(cWorkSheet, cTable, "T_FORM"    ,1,1)
+	oExcel:AddColumn(cWorkSheet, cTable, "T_APRE"    ,1,1)
+	oExcel:AddColumn(cWorkSheet, cTable, "T_PCD"     ,1,1)
+	oExcel:AddColumn(cWorkSheet, cTable, "T_DEMI"    ,1,4)
+	oExcel:AddColumn(cWorkSheet, cTable, "T_MOTI"    ,1,1)
+	oExcel:AddColumn(cWorkSheet, cTable, "T_TIPFUN"  ,1,1)
+	oExcel:AddColumn(cWorkSheet, cTable, "T_HRSMES"  ,3,2)
+	oExcel:AddColumn(cWorkSheet, cTable, "T_TEMPOC"  ,3,2)
+	oExcel:AddColumn(cWorkSheet, cTable, "T_ENDER"   ,1,1)
+	oExcel:AddColumn(cWorkSheet, cTable, "T_BAIRRO"  ,1,1)
+	oExcel:AddColumn(cWorkSheet, cTable, "T_NUM"     ,1,1)
+	oExcel:AddColumn(cWorkSheet, cTable, "T_ESTADO"  ,1,1)
+	oExcel:AddColumn(cWorkSheet, cTable, "T_CIDADE"  ,1,1)
+	oExcel:AddColumn(cWorkSheet, cTable, "T_CEP"     ,1,1)
+	oExcel:AddColumn(cWorkSheet, cTable, "T_CPF"     ,1,1)
+	oExcel:AddColumn(cWorkSheet, cTable, "T_RG"      ,1,1)
+	oExcel:AddColumn(cWorkSheet, cTable, "T_PIS"     ,1,1)
+	oExcel:AddColumn(cWorkSheet, cTable, "T_ELEITOR" ,1,1)
+	oExcel:AddColumn(cWorkSheet, cTable, "T_CTPS"    ,1,1)
+	oExcel:AddColumn(cWorkSheet, cTable, "T_RESERVI" ,1,1)
+	oExcel:AddColumn(cWorkSheet, cTable, "T_LINKEDI" ,1,1)
+	oExcel:AddColumn(cWorkSheet, cTable, "T_FACEBOO" ,1,1)
+	oExcel:AddColumn(cWorkSheet, cTable, "T_EMAIL"   ,1,1)
+	oExcel:AddColumn(cWorkSheet, cTable, "T_FONE"    ,1,1)
+	oExcel:AddColumn(cWorkSheet, cTable, "T_CEL"     ,1,1)
+	oExcel:AddColumn(cWorkSheet, cTable, "T_BANCO"   ,1,1)
+	oExcel:AddColumn(cWorkSheet, cTable, "T_CONTA"   ,1,1)
+	oExcel:AddColumn(cWorkSheet, cTable, "T_MAE"     ,1,1)
+	oExcel:AddColumn(cWorkSheet, cTable, "T_RNE"     ,1,1)
+
+	DBSELECTAREA("TMP")
+	DBGOTOP()
+	Do While TMP->(!Eof())
+		oExcel:AddRow(cWorkSheet,cTable,{TMP->T_FILIAL,;
+			TMP->T_MATR,;
+			TMP->T_NOME,;
+			TMP->T_CODFUNC,;
+			TMP->T_FUNC,;
+			TMP->T_CODCARG ,;
+			TMP->T_CARG,;
+			TMP->T_SALA,;
+			TMP->T_CODI,;
+			TMP->T_CCUS,;
+			TMP->T_ADMI,;
+			TMP->T_NASC,;
+			TMP->T_ESTCIVI ,;
+			TMP->T_CBO,;
+			TMP->T_SEXO,;
+			TMP->T_NATU,;
+			TMP->T_FORM,;
+			TMP->T_APRE,;
+			TMP->T_PCD,;
+			TMP->T_DEMI,;
+			TMP->T_MOTI,;
+			TMP->T_TIPFUN,;
+			TMP->T_HRSMES,;
+			TMP->T_TEMPOC,;
+			TMP->T_ENDER,;
+			TMP->T_BAIRRO,;
+			TMP->T_NUM,;
+			TMP->T_ESTADO,;
+			TMP->T_CIDADE,;
+			TMP->T_CEP,;
+			TMP->T_CPF,;
+			TMP->T_RG,;
+			TMP->T_PIS,;
+			TMP->T_ELEITOR,;
+			TMP->T_CTPS,;
+			TMP->T_RESERVI,;
+			TMP->T_LINKEDI,;
+			TMP->T_FACEBOO,;
+			TMP->T_EMAIL,;
+			TMP->T_FONE,;
+			TMP->T_CEL,;
+			TMP->T_BANCO,;
+			TMP->T_CONTA,;
+			TMP->T_MAE,;
+			TMP->T_RNE})
+		TMP->(DBSkip())
+	EndDo
+	TMP->(DbCloseArea())
+
+	Arquivo := cGetFile(cTipo,OemToAnsi("Selecione o Diretorio do arquivo de atualização"),,'C:\ABCDE',.T.)
+	Arquivo := Alltrim(Arquivo)
+
+	If RIGHT(Arquivo,4) <> ".xml" .Or. RIGHT(Arquivo,4) <> ".XML" .Or. RIGHT(Arquivo,4) <> ".Xml"
+		Arquivo := Alltrim(Arquivo+".xml")
+	EndIf
+
+
+	oExcel:Activate()
+	oExcel:GetXMLFile(Arquivo)
+	MSGINFO("Planilha gravada Sucesso: "+Arquivo,)
+
+RETURN
+//////////////////////////////////////////////////////////////////////////////////////////

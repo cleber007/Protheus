@@ -1,0 +1,910 @@
+#include "totvs.ch"
+//Array Grupo de Cobrança
+#Define NPOSGRPCOBRANCA     01
+#Define NPOSGRPCLIENTE      02
+#DEFINE NPOSGRPDESCONTO     03
+#Define NPOSGRPVALOR        04
+Static __aGrupoCobranca     := {{"","",0,0}}
+//Array Cobranças
+#DEFINE NPOSCOBLEGENDA      01
+#DEFINE NPOSCOBTIPO         02
+#DEFINE NPOSCOBVENCIMENTO   03
+#DEFINE NPOSCOBPREFIXO      04
+#DEFINE NPOSCOBNUMERO       05
+#DEFINE NPOSCOBPARCELA      06
+#DEFINE NPOSCOBPARCELAMENTO 07
+#DEFINE NPOSCOBVALOR        08
+#DEFINE NPOSCOBVALORLIQ     09
+
+#Define NPOSALTURATELA  04
+#DEFINE NPOSLARGURATELA 03
+
+Static __aCobrancas     := {{.F.,"",DtoC(StoD("")),"","","","",0,0,0}}
+/*/{Protheus.doc} nomeFunction
+    (long_description)
+    @type  Function
+    @author user
+    @since date
+    @version version
+    @param param, param_type, param_descr
+    @return return, return_type, return_description
+    @example
+    @see (links_or_references)
+/*/
+User Function AnuidadeMensalidade
+    Local oModal                := FWDialogModal():New()    
+    Local lHasButton            := .T.
+    Local oGrupoCobranca
+    Local aGrupoCobranca        := __aGrupoCobranca
+    Local oCobrancas
+    Local aCobrancas            := __aCobrancas
+    Local nLarguraSay           := 040
+    Local nAlturaSay            := 020
+    Local nLarguraGet           := 040
+    Local nAlturaGet            := 010
+    Local nTextoUnitario        := 002
+    Local oAnuidadeMensalidade
+    Local aAnuidadeMensalidade  := {'Anuidade','Mensalidade'}
+    Local oProcessarCancelar
+    Local nProcessarCancelar    := 1
+    Local aProcessarCancelar    := {'Processar','Exclusão'}
+    Local oFont 			    := TFont():New("Verdana",,012,,.T.,,,,,.F.,.F.)//Fontes
+    Local oSay      
+	Local aInfoAdvSize	          := {}
+	Local aObjCoords	          := {}
+    Local aAdvSize		          := {}
+    Private nAnuidadeMensalidade  := 1
+    Private oContainer
+    Private oQuantidadeParcelas   
+    Private aObjSize		      := {}
+    Private nBorda          
+    Private cGrupoDeCobranca      := Space(TamSx3("ZZ1_COD")[1]) // Variavel do tipo caracter
+    Private oGrupoDeCobranca
+    Private cCodigoCliente        := Space(TamSx3("A1_COD")[1]) // Variavel do tipo caracter
+    Private oCodigoCliente
+    Private cCodigoLoja           := Space(TamSx3("A1_LOJA")[1]) // Variavel do tipo caracter
+    Private cCompetencia          := cValToChar(Year( dDataBase ))
+    Private nQuantidadeParcelas   := 12
+    Private oDiaVencimento
+    Private nDiaVencimento        := 0
+    Private dDataVencimento       := Date()
+    Private nDescontoAnuidade     := GetMV("XX_DESCANL",.F.,20)
+    Private oVermelho   	      := LoadBitmap( GetResources() , "BR_VERMELHO" )
+	Private oVerde   	          := LoadBitmap( GetResources() , "BR_VERDE"    )
+	Private oAmarelo   	          := LoadBitmap( GetResources() , "BR_AMARELO"  )
+	Private oPreto   	          := LoadBitmap( GetResources() , "BR_AMARELO"  )
+    Private cNatureza             := Space(TAMSX3("ED_CODIGO")[1])               
+    Private oNatureza
+    Private nColuna
+    Private nLarguraTela
+    Private nLinha      
+    Private lEditAnuidade           := .T.
+    Private lEditMensalidade        := .T.
+    Private cCCMENSA                :=  GetNewPar("AP_CCMENSA", "02001")
+    //Private nJuros                := GetMv("MV_JUROS",.f.,0)
+    //Private nMulta                := GetMv("MV_JUROS",.f.,0)
+
+    SetKey(VK_F5, {|| FWMsgRun(,{|oSay| PesquisaGrupoCobranca(oSay,oGrupoCobranca,aGrupoCobranca,oCobrancas,aCobrancas) } ;
+        ,"AGUARDE...","Efetuando pesquisa") })
+    SetKey(VK_F6, {|| FWMsgRun(,{|oSay| ;
+        CobrancaProcessamento(oSay,nAnuidadeMensalidade == 1,nProcessarCancelar == 1,oGrupoCobranca,aGrupoCobranca,oCobrancas,aCobrancas) };
+        ,"AGUARDE...","Efetuando processamento")})
+
+    aAdvSize		:= MsAdvSize()                  
+	aInfoAdvSize	:= { aAdvSize[1] , aAdvSize[2] , aAdvSize[3] , aAdvSize[4] , 10 , 10}					 
+	aAdd( aObjCoords , { aAdvSize[3] /*X*/, aAdvSize[4]  * 0.10 /*y*/, .T. , .T. ,.T.} )     //Retorna as coordenadas.
+    aAdd( aObjCoords , { aAdvSize[3] / 2  , (aAdvSize[4]/2) * 0.90  , .T. , .T. , .T. } ) //Retorna tamanho do objeto
+	aObjSize	    := MsObjSize( aInfoAdvSize , aObjCoords,.T. )
+
+    nLinha          := 010 //aObjSize[1,1]  
+    nBorda          := 010
+    nColuna         := aObjSize[1,2]  
+    nLarguraTela    := aAdvSize[3] - nBorda   //aObjSize[1,4]
+    aObjSize[1,1]   := aAdvSize[1]  
+    nLinhaFim       := (aAdvSize[4] - aAdvSize[2]) * 0.90//- aAdvSize[2]
+    aObjSize[2,1]   := nLinhaFim   * 0.21
+    oModal:SetEscClose(.F.)
+    oModal:SetBackground(.T.)
+    oModal:setTitle("Geração de Cobranças")
+    oModal:setSize( aAdvSize[NPOSALTURATELA] , aAdvSize[NPOSLARGURATELA] )
+
+    oModal:enableAllClient()
+    oModal:createDialog()
+    oModal:CreateFormBar()
+    
+    oContainer          := TPanel():New( ,,, oModal:getPanelMain() )
+    oContainer:Align    := CONTROL_ALIGN_ALLCLIENT
+
+    oModal:addCloseButton(nil, "Fechar")
+    oGroupCabecalho := TGroup():New(aObjSize[1,1], aObjSize[1,2] ,nLinhaFim * 0.20 , nLarguraTela ,'Pesquisa',oContainer,,,.T.)
+
+    TSay():New(nLinha,nColuna,{|| "Grupo de Cobrança"},oGroupCabecalho,,oFont,,,,.T.,,,nLarguraSay,nAlturaSay,,,,,,.T.)
+    nColuna  += 030 
+    oGrupoDeCobranca := TGet():New(nLinha,nColuna, { | u | If( PCount() == 0, cGrupoDeCobranca, cGrupoDeCobranca := u ) },oGroupCabecalho,nLarguraGet, nAlturaGet,"@!",, 0, 16777215,,.F.,,.T.,,.F.,,.F.,.F.,,.F.,.F. ,,"cGrupoDeCobranca",,,,lHasButton  )
+    oGrupoDeCobranca:cF3 := "ZZ1"
+
+    //Calcula a posição da linha e coluna do proximo componente.
+    CalculaPosicao((030+nLarguraGet),nLarguraSay)
+    TSay():New(nLinha+nTextoUnitario ,nColuna ,{|| "Clientes"},oGroupCabecalho,,oFont,,,,.T.,,,030,nAlturaSay,,,,,,.T.)
+    nColuna  += 025
+    oCodigoCliente := TGet():New( nLinha,nColuna, { | u | If( PCount() == 0, cCodigoCliente, cCodigoCliente := u ) },oGroupCabecalho,nLarguraGet, nAlturaGet,"@!",, 0, 16777215,,.F.,,.T.,,.F.,,.F.,.F.,,.F.,.F. ,,"cCodigoCliente",,,,lHasButton  )
+    oCodigoCliente:cF3 := "SA1"
+
+    //Calcula a posição da linha e coluna do proximo componente.
+    CalculaPosicao((030+nLarguraGet),nLarguraSay+010)
+    TSay():New(nLinha+nTextoUnitario,nColuna,{|| "Loja"}, oGroupCabecalho,,oFont,,,,.T.,,,030,nAlturaSay,,,,,,.T.)
+    nColuna  += 015
+    //nColuna  += 025
+    TGet():New( nLinha,nColuna, { | u | If( PCount() == 0, cCodigoLoja, cCodigoLoja := u ) },oGroupCabecalho,nLarguraGet, nAlturaGet,"@!",, 0, 16777215,,.F.,,.T.,,.F.,,.F.,.F.,,.F.,.F. ,,"cCodigoCliente",,,,lHasButton  )
+
+    //Calcula a posição da linha e coluna do proximo componente.
+    CalculaPosicao((nLarguraSay+nLarguraGet),nLarguraSay)
+    TSay():New(nLinha+nTextoUnitario,nColuna,{|| "Competencia"},oGroupCabecalho,,oFont,,,,.T.,,,nLarguraSay+005,nAlturaSay,,,,,,.T.)
+    nColuna  += nLarguraSay
+    TGet():New(nLinha,nColuna, { | u | If( PCount() == 0, cCompetencia, cCompetencia := u ) },oGroupCabecalho,nLarguraGet, nAlturaGet, "@E 9999",, 0, 16777215,,.F.,,.T.,,.F.,,.F.,.F.,,.F.,.F. ,,"cCompetencia",,,,lHasButton  )    
+    
+    //Calcula a posição da linha e coluna do proximo componente.
+    CalculaPosicao((nLarguraSay+nLarguraGet),nLarguraSay)
+    TSay():New(nLinha,nColuna,{|| "Quantidade de parcelas"},oGroupCabecalho,,oFont,,,,.T.,,,nLarguraSay,nAlturaSay,,,,,,.T.)
+    nColuna  += nLarguraSay 
+    oQuantidadeParcelas := TGet():New(nLinha,nColuna, { | u | If( PCount() == 0, nQuantidadeParcelas, nQuantidadeParcelas := u ) },oGroupCabecalho,nLarguraGet, nAlturaGet, "@E 99",, 0, 16777215,,.F.,,.T.,,.F.,,.F.,.F.,,.F.,(nAnuidadeMensalidade == 2) ,,"nQuantidadeParcelas",,,,lHasButton  )
+    oQuantidadeParcelas:bGetKey := {|self,cText,nkey| ValidFiel(self,cText,nkey,oContainer,0) }
+    oQuantidadeParcelas:lReadOnly := .T.
+
+    //Calcula a posição da linha e coluna do proximo componente.
+    CalculaPosicao((nLarguraSay+nLarguraGet),nLarguraSay)
+    TSay():New(nLinha,nColuna,{|| "Dia do vencimento"},oGroupCabecalho,,oFont,,,,.T.,,,nLarguraSay,nAlturaSay,,,,,,.T.)
+    nColuna  += 030 
+    oDiaVencimento := TGet():New(nLinha,nColuna, { | u | If( PCount() == 0, nDiaVencimento, nDiaVencimento := u ) },oGroupCabecalho,nLarguraGet, nAlturaGet, "@E 99",, 0, 16777215,,.F.,,.T.,,.F.,,.F.,.F.,,(nAnuidadeMensalidade == 2),.F. ,,"nDiaVencimento",,,,lHasButton  )
+    oDiaVencimento:bGetKey := {|self,cText,nkey| ValidFiel(self,cText,nkey,oContainer,1) }
+    oDiaVencimento:lReadOnly := .T.
+
+    //Calcula a posição da linha e coluna do proximo componente.
+    CalculaPosicao((nLarguraSay+nLarguraGet),nLarguraSay)
+    TSay():New(nLinha,nColuna,{|| "Data do vencimento "},oGroupCabecalho,,oFont,,,,.T.,,,nLarguraSay,nAlturaSay,,,,,,.T.)
+    nColuna  += (035)
+    oDataVencimento := TGet():New(nLinha,nColuna, { | u | If( PCount() == 0, dDataVencimento, dDataVencimento := u ) },oGroupCabecalho,nLarguraGet, nAlturaGet, "@D",;
+                {|| ValidFiel(,,,oContainer,2) } , 0, 16777215,,.F.,,.T.,,.F.,,.F.,.F.,,.F.,.f. ,,"dDataVencimento",,,,lHasButton  )
+    oDataVencimento:lReadOnly := .F.
+
+//Calcula a posição da linha e coluna do proximo componente.
+    CalculaPosicao((nLarguraSay+nLarguraGet),nLarguraSay)
+    TSay():New(nLinha,nColuna,{|| "Natureza"},oGroupCabecalho,,oFont,,,,.T.,,,nLarguraSay,nAlturaSay,,,,,,.T.)
+    nColuna  += (035)
+    oNatureza := TGet():New(nLinha,nColuna, { | u | If( PCount() == 0, cNatureza, cNatureza := u ) },oGroupCabecalho,nLarguraGet, nAlturaGet, ,;
+                 {|| A460Natur(cNatureza)} , 0, 16777215,,.F.,,.T.,,.F.,,.F.,.F.,,.F.,.F. ,,"cNatureza",,,,lHasButton  )
+    oNatureza:cF3 := "SED"
+
+    //Calcula a posição da linha e coluna do proximo componente.
+    CalculaPosicao((020)+050,nLarguraSay)
+    TSay():New(nLinha,nColuna,{|| "Tipo"},oGroupCabecalho,,oFont,,,,.T.,,,020,nAlturaSay,,,,,,.T.)
+    nColuna         += (020)
+    oAnuidadeMensalidade         := TRadMenu():Create(oGroupCabecalho,,nLinha,nColuna,aAnuidadeMensalidade,,,,,,,,050,nAlturaGet,,,,.T.)
+    oAnuidadeMensalidade:bSetGet := {|u|Iif(PCount()==0,nAnuidadeMensalidade,nAnuidadeMensalidade:=u) }
+
+    oAnuidadeMensalidade:bChange := {|| LibField() }
+    
+    //Calcula a posição da linha e coluna do proximo componente.
+    CalculaPosicao((020)+050,nLarguraSay)
+    TSay():New(nLinha,nColuna,{|| "Ação"},oGroupCabecalho,,oFont,,,,.T.,,,020,nAlturaSay,,,,,,.T.)
+    nColuna         += (020)
+    oProcessarCancelar         := TRadMenu():Create(oGroupCabecalho,,nLinha,nColuna,aProcessarCancelar,,,,,,,,050,nAlturaGet,,,,.T.)
+    oProcessarCancelar:bSetGet := {|u|Iif (PCount()==0,nProcessarCancelar,nProcessarCancelar:=u)}
+    
+    //Calcula a posição da linha e coluna do proximo componente.
+    CalculaPosicao(nLarguraSay,nLarguraSay)
+    TButton():New(nLinha - 005,nColuna,'Pesquisar',oGroupCabecalho,{|| FWMsgRun(,{|oSay| PesquisaGrupoCobranca(oSay,oGrupoCobranca,aGrupoCobranca,oCobrancas,aCobrancas) } ;
+        ,"AGUARDE...","Efetuando pesquisa") },nLarguraSay,nAlturaSay,,,,.T.)
+    
+    //Calcula a posição da linha e coluna do proximo componente.
+    CalculaPosicao(nLarguraSay,nLarguraSay+005)
+    TButton():New(nLinha - 005,nColuna,'Processar',oGroupCabecalho,{|| FWMsgRun(,{|oSay| ;
+        CobrancaProcessamento(oSay,nAnuidadeMensalidade == 1,nProcessarCancelar == 1,oGrupoCobranca,aGrupoCobranca,oCobrancas,aCobrancas) };
+        ,"AGUARDE...","Efetuando processamento")},nLarguraSay,nAlturaSay,,,,.T.)
+    
+    //Grupo de Cobrança
+    oTGrupoCobranca := TGroup():New(aObjSize[2,1] , aObjSize[2,2] , nLinhaFim + nBorda, nLarguraTela / 2   ,'Grupo Cobrança',oContainer,,,.T.)
+    nRowGrpCob      := aObjSize[2,1] * 1.15               //Indica a coordenada vertical.
+    nColGrpCob      := aObjSize[2,2] + (nBorda * 0.5)     //Indica a coordenada horizontal.
+    nWidthGrpCob    := (nLarguraTela / 2)                 //Indica a largura em pixels do objeto.
+    nHeightGrpCob   := aObjSize[2,4] * 0.93             //Indica a altura em pixels do objeto.
+
+    oGrupoCobranca  := TCBrowse():New(nRowGrpCob            ,;
+                                    nColGrpCob              ,;
+                                    nWidthGrpCob - (nBorda * 1.6 ) ,;
+                                    nHeightGrpCob           ,;
+                                    ,,, oTGrupoCobranca,,,,,{||},,/*oFont*/oFont,,/*nClrFore*/,/*nClrBack*/,/*cMsg*/,.F.,/*cAlias*/,.T.,,.F.,,, )
+
+	oGrupoCobranca:AddColumn(TCColumn():New("Grupo de Cobrança"		, {|| aGrupoCobranca[oGrupoCobranca:nAt,NPOSGRPCOBRANCA]},,,,"LEFT", 040,.F.,.F.,,{|| .F. },,.F. ) )
+	oGrupoCobranca:AddColumn(TCColumn():New("Cliente"		        , {|| aGrupoCobranca[oGrupoCobranca:nAt,NPOSGRPCLIENTE] },,,,"LEFT", 040,.F.,.F.,,{|| .F. },,.F. ) )
+	oGrupoCobranca:AddColumn(TCColumn():New("% Desconto Anuidade"   , {|| aGrupoCobranca[oGrupoCobranca:nAt,NPOSGRPDESCONTO]},"@E 99.99",,,"LEFT", 040,.F.,.F.,,{|| .F. },,.F. ) )
+    oGrupoCobranca:AddColumn(TCColumn():New("Valor Anuidade"		, {|| aGrupoCobranca[oGrupoCobranca:nAt,NPOSGRPVALOR]   },"@E 999,999,999.99",,,"LEFT", 040,.F.,.F.,,{|| .F. },,.F. ) )
+
+    oGrupoCobranca:bLDblClick := {||  FWMsgRun(,{|oSay| PesquisaCobranca(oSay,Left(aGrupoCobranca[oGrupoCobranca:nat,NPOSGRPCLIENTE],at("-",aGrupoCobranca[oGrupoCobranca:nat,NPOSGRPCLIENTE])-1 ) ,oCobrancas,aCobrancas)  } ,"AGUARDE...","Efetuando pesquisa") }
+    AtualizaLista(oGrupoCobranca , aGrupoCobranca,.T. )
+    
+    //Cobranças 
+    nRowCob    := nRowGrpCob  //Indica a coordenada vertical.
+    nColCob    := (nLarguraTela / 2) //Indica a coordenada horizontal.
+    nWidthCob  := nColCob            //Indica a largura em pixels do objeto.
+    nHeightCob := nHeightGrpCob      //Indica a altura em pixels do objeto.
+
+    oTCobrancas  := TGroup():New(aObjSize[2,1] ,nColCob , nLinhaFim + nBorda, nLarguraTela,'Cobranças',oContainer,,,.T.)
+    oCobrancas   := TCBrowse():New( nRowCob             ,;
+                                    nColCob   + (nBorda*0.5),;
+                                    nWidthCob - (nBorda*0.9),;
+                                    nHeightCob          ,;
+                                    ,,, oTCobrancas,,,,,{||},,/*oFont*/oFont,,/*nClrFore*/,/*nClrBack*/,/*cMsg*/,.F.,/*cAlias*/,.T.,,.F.,,, )
+    
+    oCobrancas:AddColumn(TCColumn():New(""	        , {|| if(aCobrancas[oCobrancas:nAt,NPOSCOBLEGENDA],oVerde,oVermelho) },,,,      "LEFT", 020,.T.,.F.,,{|| .F. },,.F. ) )    
+    oCobrancas:AddColumn(TCColumn():New("Tipo"	    , {|| aCobrancas[oCobrancas:nAt,NPOSCOBTIPO]            },,,,                   "LEFT", 020,.F.,.F.,,{|| .F. },,.F. ) )
+	oCobrancas:AddColumn(TCColumn():New("Vencto Real", {|| aCobrancas[oCobrancas:nAt,NPOSCOBVENCIMENTO]      },"@D",,,               "LEFT", 040,.F.,.F.,,{|| .F. },,.F. ) )
+    oCobrancas:AddColumn(TCColumn():New("Prefixo"	, {|| aCobrancas[oCobrancas:nAt,NPOSCOBPREFIXO]         },,,,                   "LEFT", 030,.F.,.F.,,{|| .F. },,.F. ) )
+	oCobrancas:AddColumn(TCColumn():New("Numero"	, {|| aCobrancas[oCobrancas:nAt,NPOSCOBNUMERO]          },,,,                   "LEFT", 030,.F.,.F.,,{|| .F. },,.F. ) )
+	oCobrancas:AddColumn(TCColumn():New("Parcela"	, {|| aCobrancas[oCobrancas:nAt,NPOSCOBPARCELA]         },"@E99",,,             "LEFT", 030,.F.,.F.,,{|| .F. },,.F. ) )
+    oCobrancas:AddColumn(TCColumn():New("Parelamento", {|| aCobrancas[oCobrancas:nAt,NPOSCOBPARCELAMENTO]   },"@E99",,,             "LEFT", 030,.F.,.F.,,{|| .F. },,.F. ) )
+	oCobrancas:AddColumn(TCColumn():New("Valor Bruto", {|| aCobrancas[oCobrancas:nAt,NPOSCOBVALOR]          },"@E999,999,999.99",,, "LEFT", 040,.F.,.F.,,{|| .F. },,.F. ) )
+    oCobrancas:AddColumn(TCColumn():New("Valor Liquido"	, {|| aCobrancas[oCobrancas:nAt,NPOSCOBVALORLIQ]    },"@E999,999,999.99",,, "LEFT", 040,.F.,.F.,,{|| .F. },,.F. ) )
+
+    AtualizaLista(oCobrancas , aCobrancas ,.F.)
+
+    oModal:Activate()
+
+        
+    // Apaga um SetKey
+    SetKey(VK_F5, {|| })
+    SetKey(VK_F6, {|| })
+
+Return 
+
+Static Function ValidFiel(self,cText,nkey,oContainer,nOpc)
+    Local lRet := .T.
+    
+    if nOpc == 0
+        if Val(cText) > 12
+            FWAlertError("Parcelamento Maximo 12x!","Quantidade Parcelas")
+            self:lFocSel := .T.
+            self:Buffer  := self:cText   := "12"
+        EndIf
+    Elseif nOpc == 1
+        if Val(cText) > 31
+            FWAlertError("Dia de vencimento inválido!","Dia Vencimento")
+            self:lFocSel := .T.
+            self:Buffer  := self:cText   := "31"
+        EndIf
+    Elseif nOpc == 2    
+        if dDataVencimento < dDataBase
+            FWAlertError("Data de vencimento inválido, a data de vencimento precisa ser maior ou igual ao dia atual.","Vencimento")
+            lRet := .F.
+        EndIF    
+    Endif    
+        oContainer:refresh()
+Return lRet    
+
+Static function LibField()
+    oDiaVencimento:lReadOnly        := oQuantidadeParcelas:lReadOnly   := ( nAnuidadeMensalidade == 1 )
+    oDataVencimento:lReadOnly       := ( nAnuidadeMensalidade == 2 )
+    if oDiaVencimento:lReadOnly
+        nDiaVencimento := 0
+    EndIf
+    oContainer:refresh() 
+Return
+
+
+Static Function CalculaPosicao(nFolga,nLargura)
+    Default nFolga      := 50
+    Default nLargura    := 0        
+
+    if (nColuna + nFolga) >= nLarguraTela //(nLarguraTela - nBorda)
+        //Quebra de linha
+        nLinha   += 20
+        nColuna  := aObjSize[1,2] //oSize:aWindSize[2]
+    Else
+        nColuna  += nLargura //+ 5
+    Endif
+
+Return
+
+Static Function AtualizaLista(oLista , aLista,lGrupoCobranca )
+    Default lGrupoCobranca := .t.
+    
+    oLista:SetArray(aLista)
+    
+    if lGrupoCobranca
+        oLista:bLine := { || { ;
+        aLista[oLista:nAt,NPOSGRPCOBRANCA],;
+        aLista[oLista:nAt,NPOSGRPCLIENTE],;
+        Transform(aLista[oLista:nAt,NPOSGRPDESCONTO],"@E 99,99"),;
+        Transform(aLista[oLista:nAt,NPOSGRPVALOR],"@E 999,999,999.99")}}
+    Else
+        oLista:bLine := { || { ;
+        if(aLista[oLista:nAt,NPOSCOBLEGENDA],oVerde,oVermelho),;
+        aLista[oLista:nAt,NPOSCOBTIPO],;
+        Transform(aLista[oLista:nAt,NPOSCOBVENCIMENTO],"@D"),;
+        aLista[oLista:nAt,NPOSCOBPREFIXO],;
+        aLista[oLista:nAt,NPOSCOBNUMERO],;
+        Transform(aLista[oLista:nAt,NPOSCOBPARCELA],"@E99") ,;
+        Transform(aLista[oLista:nAt,NPOSCOBPARCELAMENTO],"@E99") ,;
+        Transform(aLista[oLista:nAt,NPOSCOBVALOR],"@E 999,999,999.99") ,;
+        Transform(aLista[oLista:nAt,NPOSCOBVALORLIQ],"@E 999,999,999.99") }}
+        
+    Endif
+    
+    oLista:refresh()
+    
+Return 
+
+/*/{Protheus.doc} PesquisaGrupoCobranca
+    Função responsável pela busca do grupo de cobranças(ZZ1) e dados do cliente(SA1).
+    @type  Static Function
+    @author Joao Vitor Ribeiro
+    @since 19/11/2019
+    @param param, param_type, param_descr
+    @return Nil
+    ZZ1_FILIAL  - 4     - Filial
+    ZZ1_COD     - 6     - Codigo  -> A1_XGRUPCO
+    ZZ1_DESCRI  - 20    - Descrição
+    ZZ1_POPMEN  - 11    - Popul. Menor
+    ZZ1_POPMAI  - 11    - Popul Maior
+    ZZ1_VLRANU  - 13    - Vlr Anuidade
+    ZZ1_VLRANT  - 13    - Vlr Ano Ante
+    ZZ1_INDREA  - 5     - Ind. Reaju %
+/*/
+Static Function PesquisaGrupoCobranca(oMsg,oGrupoCobranca,aGrupoCobranca,oCobrancas,aCobrancas)
+	Local cQry
+    Local _cAlias
+    
+    aGrupoCobranca := {}
+
+    oMsg:SetText("Pesquisando...") // ALTERA O TEXTO CORRETO
+
+    cQry := " SELECT ZZ1_COD, ZZ1_DESCRI AS GRUPO_COBRANCA, A1_COD,A1_LOJA, A1_NOME AS CLIENTE, ZZ1_VLRANU AS VALOR_ANUIDADE"+CRLF
+	cQry += " FROM "+RetSQLName("ZZ1") + " ZZ1" + CRLF
+    cQry += " INNER JOIN "+RetSQLName("SA1") +" SA1 ON SA1.D_E_L_E_T_ <>  '*' AND A1_FILIAL = ZZ1_FILIAL AND A1_XGRUPCO = ZZ1_COD" + CRLF
+	cQry += " WHERE ZZ1.D_E_L_E_T_ <>  '*'   "+CRLF
+    
+    if !Empty(cGrupoDeCobranca)
+        cQry += " AND ZZ1_COD = '"+cGrupoDeCobranca + "'"
+    EndIf    
+	if !Empty(cCodigoCliente)
+        cQry += " AND A1_COD = '"+cCodigoCliente+ "'"
+    EndIf   
+    if !Empty(cCodigoLoja)
+        cQry += " AND A1_LOJA = '"+cCodigoLoja+ "'"
+    EndIf   
+
+    cQry += " ORDER BY ZZ1_DESCRI, A1_NOME "
+
+    _cAlias := MPSysOpenQuery(cQry)
+	
+    While !(_cAlias)->(Eof())
+        AaDd(aGrupoCobranca,{   (_cAlias)->ZZ1_COD + "-" + AllTrim((_cAlias)->GRUPO_COBRANCA),;
+                                (_cAlias)->A1_COD  + (_cAlias)->A1_LOJA + "-" + AllTrim((_cAlias)->CLIENTE),;
+                                nDescontoAnuidade,;
+                                (_cAlias)->VALOR_ANUIDADE})
+        (_cAlias)->(DbSkip())
+	EnddO
+	(_cAlias)->(DbCloseArea())
+    
+    oMsg:SetText("Atualizando Grupo de cobranças...") // ALTERA O TEXTO CORRETO
+    
+    IF !Empty(aGrupoCobranca)
+        oMsg:SetText("Atualizando cobranças...") // ALTERA O TEXTO CORRETO
+        PesquisaCobranca(oMsg,Left(aGrupoCobranca[01 ,NPOSGRPCLIENTE],at("-",aGrupoCobranca[01 ,NPOSGRPCLIENTE]) - 1 ) ,oCobrancas,aCobrancas)
+    Else
+        //FWAlertSuccess("N","processamento!")
+        FWAlertError("Não foram encontrados registro com os dados informados, verifique os dados e tente novamente.","Grupo de Cobranças")
+        aGrupoCobranca := __aGrupoCobranca
+    Endif
+    
+    AtualizaLista(oGrupoCobranca , aGrupoCobranca)
+
+Return 
+
+/*/{Protheus.doc} PesquisaGrupoCobranca
+    Função responsável pela busca do grupo de cobranças(ZZ1) e dados do cliente(SA1).
+    @type  Static Function
+    @author Joao Vitor Ribeiro
+    @since 19/11/2019
+    @param param, param_type, param_descr
+    @return Nil
+/*/
+Static Function PesquisaCobranca(oMsg,cCodigoCliente,oCobrancas,aCobrancas)
+	Local cQry
+    Local _cAlias
+    Local lExistE1_XTPAR := SE1->(FieldPos("E1_XTPAR")) > 0
+    aCobrancas := {}
+
+    oMsg:SetText("Efetuando Pesquisando...") // ALTERA O TEXTO CORRETO
+
+    cQry := " SELECT E1_PREFIXO,E1_VENCREA,E1_NUM,E1_PARCELA, E1_SALDO,E1_DECRESC,E1_VALOR "+CRLF
+	if lExistE1_XTPAR
+        cQry += " ,E1_XTPAR "+CRLF
+    Endif
+    cQry += " FROM "+RetSQLName("SE1") + CRLF
+	cQry += " WHERE D_E_L_E_T_ <>  '*' AND E1_FILIAL = '"+xFilial("SE1")+"' "+CRLF
+    cQry += " AND E1_CLIENTE + E1_LOJA = '"+cCodigoCliente+"' "+CRLF
+    cQry += " AND (E1_PREFIXO = 'A"+Right(cValToChar( cCompetencia ),2)+"' "+CRLF
+    cQry += " OR E1_PREFIXO = 'M"+Right(cValToChar( cCompetencia ),2)+"' )"+CRLF
+    
+    if !Empty(cCompetencia) .And. SE1->(FieldPos("E1_XABASE")) > 0
+        cQry += " AND E1_XABASE = '"+cCompetencia+"' "+CRLF    
+    EndIf    
+    //E1_XMBASE para mês de competência 
+    //E1_XABASE para ano de competência 
+
+    cQry += "ORDER BY E1_EMISSAO "
+
+    _cAlias := MPSysOpenQuery(cQry)
+	
+    While !(_cAlias)->(Eof())
+        AaDd(aCobrancas,{   if( (_cAlias)->E1_SALDO > 0 ,.T.,.F.),;
+                            if( Left((_cAlias)->E1_PREFIXO,1) == "A" ,"Anuidade","Mensalidade"),;
+                            StoD((_cAlias)->E1_VENCREA),;
+                            (_cAlias)->E1_PREFIXO,;
+                            (_cAlias)->E1_NUM,;
+                            (_cAlias)->E1_PARCELA,;
+                            if(lExistE1_XTPAR, (_cAlias)->E1_XTPAR , 0  ),;
+                            (_cAlias)->E1_VALOR ,;
+                            (_cAlias)->E1_VALOR - (_cAlias)->E1_DECRESC})
+
+        (_cAlias)->(DbSkip())
+	EnddO
+	(_cAlias)->(DbCloseArea())
+    
+    IF Empty(aCobrancas)
+        aCobrancas := __aCobrancas
+    Endif
+
+    oMsg:SetText("Atualizando cobranças...") // ALTERA O TEXTO CORRETO
+    AtualizaLista(oCobrancas , aCobrancas ,.F.)    
+
+Return 
+
+/*/{Protheus.doc} 
+    (long_description)
+    @type  Static Function
+    @author user
+    @since date
+    @version version
+    @param oMsg, Objeto, Contém o objeto da mensagem de processamento que é exibido ao usuario.
+    @param lAnuidade, Logio,True deve gerar anuidade, false deve gerar mensalidade
+    @param lProcessamento, Logico, True deve processar, fase deve cancelar o processamento anterior.
+    @return return, return_type, return_description
+    @example
+    (examples)
+    @see (links_or_references)
+/*/
+Static Function CobrancaProcessamento(oMsg,lAnuidade,lProcessamento,oGrupoCobranca,aGrupoCobranca,oCobrancas,aCobrancas)
+	Local x
+    Local y
+    Local nQuantidadeTotal  := Len(aGrupoCobranca)
+    Local nDesconto
+    Local nValor
+    Local cNumero          
+    Local aTitulos          := {}
+    Local nTamanhoChaveCli  := TamSx3("A1_COD")[1]+TAMSX3("A1_LOJA")[1]
+
+    oMsg:SetText(if(lProcessamento,"Processamento","Exclusão") +" de "+if(lAnuidade,"Anuidade","Mensalidade")+" iniciado...") // ALTERA O TEXTO CORRETO
+    
+    if nQuantidadeTotal == 0
+        FWAlertError("Sem grupos de cobrança para geração.","Geração Anuidade")
+        Return
+    Endif
+
+    Begin Sequence
+        if MsgYesNo("Tem certeza que deseja "+if(lProcessamento,"gerar ","cancelar ")+ cValToChar(nQuantidadeTotal)  +if(lAnuidade," Anuidade(s)"," Mensalidade(s)") +"?","Processamento" )
+            For x := 1 To nQuantidadeTotal
+                oMsg:SetText("Processamento em " + cValToChar( ( x / nQuantidadeTotal ) * 100 ) +" %") // ALTERA O TEXTO CORRETO
+                aTitulos  := {}
+                
+                if lAnuidade
+                    IF lProcessamento
+                        //Antes de gerar verifica se não foi gerado anuidade para o cliente em questão, caso tenha anuidade, pula o cliente.
+                        if GetAnuidade(.F., Left(aGrupoCobranca[x,NPOSGRPCLIENTE],nTamanhoChaveCli) , @aTitulos )
+                            Loop
+                        EndIf
+                        cNumero    := U_GetID('SE1',1,"E1_NUM","A"+ Right(cValToChar( cCompetencia ),2) )
+                        oMsg:SetText("Processando da Anuidade do Grupo de cobrança: "+ aGrupoCobranca[x,NPOSGRPCOBRANCA] ) // ALTERA O TEXTO CORRETO
+                        nDesconto := aGrupoCobranca[x,NPOSGRPVALOR] * (aGrupoCobranca[x,NPOSGRPDESCONTO]/100) 
+                        if !ProcessamentoTitulo(aGrupoCobranca[x],cNumero,StrZero(1,TamSx3("E1_PARCELA")[1]), "A"+Right(cValToChar( Year( dDataBase ) ),2),;
+                            aGrupoCobranca[x,NPOSGRPVALOR]  , nDesconto ,3,lAnuidade )
+                            FWAlertError("Devido ao erro informado anteriomente o processo será abortado!","Geração Anuidade")
+                            Break
+                        Endif
+                    Else
+                        if !GetAnuidade(.F., Left(aGrupoCobranca[x,NPOSGRPCLIENTE],nTamanhoChaveCli) ,@aTitulos)
+                            FWAlertError("Não foram encontrados titulos para exclusão.","Geração Anuidade")
+                            Break
+                        Endif
+                        
+                        For y := 1 To Len(aTitulos)
+                            if !ProcessamentoTitulo(,,,,,,5,,aTitulos[y,1] )
+                                FWAlertError("Devido ao erro informado anteriomente o processo será abortado!","Exclusão Anuidade")
+                                Break
+                            Endif
+                        Next 
+                    Endif
+                Else
+                    IF lProcessamento
+                        //Antes de gerar a mensalidade, deve-se localizar a anuidade do mesmo e efetuar a liquidação para apos isso gerar a mensalidade.
+                        if GetAnuidade(.F., Left(aGrupoCobranca[x,NPOSGRPCLIENTE],nTamanhoChaveCli) , @aTitulos )
+                            For y := 1 To Len(aTitulos)
+
+                                nValor   := (aTitulos[y,2]) / nQuantidadeParcelas
+                                cNumero  := U_GetID('SE1',1,"E1_NUM","M"+ Right(cValToChar( cCompetencia ),2) )
+
+                                if !ProcessamentoParcela(aTitulos[y,1], "M"+ Right(cValToChar( cCompetencia ),2) ,cNumero,nValor,nQuantidadeParcelas)
+                                    FWAlertError("Devido ao erro informado anteriomente o processo será abortado!","Geração Anuidade")
+                                    Break
+                                Endif
+                            Next 
+                        Else
+                        //    FWAlertError("Não foi encontrado Anuidade para o cliente ","Geração Mensalidade")
+                        //    Break
+                            Loop
+                        Endif
+                    Else
+                        if !GetAnuidade(.T., Left(aGrupoCobranca[x,NPOSGRPCLIENTE],nTamanhoChaveCli) , @aTitulos)
+                            FWAlertError("Não foram encontrados titulos para exclusão.","Geração Mensalidade")
+                            Break
+                        Endif
+                        
+                        For y := 1 To Len(aTitulos)
+                            if !ProcessamentoParcela(aTitulos[y,1], , , , ,5,nDesconto)
+                                FWAlertError("Devido ao erro informado anteriomente o processo será abortado!","Exclusão Anuidade")
+                                Break
+                            Endif
+                        Next
+                        //Apos efetua a busca da anuidade e retorna o desconto.
+                        nDesconto := aGrupoCobranca[x,NPOSGRPVALOR] * (aGrupoCobranca[x,NPOSGRPDESCONTO]/100) 
+                        if GetAnuidade(.F., Left(aGrupoCobranca[x,NPOSGRPCLIENTE],nTamanhoChaveCli) , @aTitulos)
+                            For y := 1 To Len(aTitulos)
+                                SE1->(DbGoTo(aTitulos[y,1] ) )
+                                RecLock("SE1",.F.)
+                                    SE1->E1_DECRESC := nDesconto
+                                    SE1->E1_SDDECRE := nDesconto
+                                SE1->(MsUnlock())
+                            Next
+                        EndIf    
+                    EndIf    
+                EndIf
+            Next x
+        EndIf
+    //RECOVER
+    End Sequence
+    
+    //Faço a chamada da rotina que atualiza a tela
+    PesquisaGrupoCobranca(oMsg,oGrupoCobranca,aGrupoCobranca,oCobrancas,aCobrancas)
+
+Return 
+
+Static Function ProcessamentoTitulo(aDado,cNumero,cParcela,cPrefixo,nValor,nDesconto,nOpc,lAnuidade,nRecnoDel)
+    Local lRet              := .T.
+    Local aTitulosReceber   := {}
+    Local dVencto           
+    //Local cNatureza         := ""//"20101"
+
+    Default nRecnoDel       := 0
+
+    if nOpc == 3
+        dVencto :=  GetVencimento(cParcela)
+        SA1->( DbSetOrder(1))
+        SA1->( DbSeek( FWxFilial( "SA1" ) + Left(aDado[NPOSGRPCLIENTE],TamSx3("A1_COD")[1]+TamSx3("A1_LOJA")[1]) ))
+        IF Empty(cNatureza)
+            cNatureza := SA1->A1_NATUREZ
+        Endif
+        if Empty(cNatureza)
+            FWAlertError("Para geração de Mensalidade é obrigatório o uso de natureza, verifique o cadastro do cliente ou digite no campo Natureza.","Valida Natureza")
+            Return .F.
+        Endif
+        aAdd(aTitulosReceber, {"E1_FILIAL",  FWxFilial("SE1")           ,   Nil})
+        aAdd(aTitulosReceber, {"E1_NUM",     cNumero                    ,   Nil})
+        aAdd(aTitulosReceber, {"E1_PREFIXO", cPrefixo                   ,   Nil})
+        aAdd(aTitulosReceber, {"E1_PARCELA", cParcela                   ,   Nil})
+        aAdd(aTitulosReceber, {"E1_TIPO",    "BOL"                      ,   Nil})
+        aAdd(aTitulosReceber, {"E1_NATUREZ", cNatureza                  ,   Nil})
+        aAdd(aTitulosReceber, {"E1_CLIENTE", SA1->A1_COD                ,   Nil})
+        aAdd(aTitulosReceber, {"E1_LOJA",    SA1->A1_LOJA               ,   Nil})
+        aAdd(aTitulosReceber, {"E1_NOMCLI",  SA1->A1_NOME               ,   Nil})
+        aAdd(aTitulosReceber, {"E1_EMISSAO", dDataBase                  ,   Nil})
+        aAdd(aTitulosReceber, {"E1_VENCTO",  dVencto                    ,   Nil})
+        aAdd(aTitulosReceber, {"E1_VENCREA", DataValida(dVencto	,.T.)   ,   Nil})
+        aAdd(aTitulosReceber, {"E1_VALOR",   Round(nValor,TamSx3("E1_VALOR")[2])  ,   Nil})
+        aAdd(aTitulosReceber, {"E1_DECRESC", Round(nDesconto,TamSx3("E1_DECRESC")[2])  ,   Nil})
+        
+        //aAdd(aTitulosReceber, {"E1_VALJUR",  nValJuros,         Nil})
+        //aAdd(aTitulosReceber, {"E1_PORCJUR", nPorcJuros,        Nil})
+        aAdd(aTitulosReceber, {"E1_HIST","GERADO AUTOMATICAMENTE PELA ROTINA DE COBRANÇAS", Nil})
+        aAdd(aTitulosReceber, {"E1_MOEDA",   1, Nil})
+        aAdd(aTitulosReceber, {"E1_ORIGEM","", Nil})
+        aAdd(aTitulosReceber, {"E1_CCUSTO",  cCCMENSA,   Nil})
+        IF SE1->(FieldPos("E1_XABASE")) > 0
+            aAdd(aTitulosReceber, {"E1_XABASE", cCompetencia    ,   Nil})
+        EndIf
+        IF SE1->(FieldPos("E1_XTPAR")) > 0
+            aAdd(aTitulosReceber, {"E1_XTPAR", 1     ,  Nil}) // Numero total de parcelas
+        EndIF
+    Else
+        //E1_FILIAL+E1_PREFIXO+E1_NUM+E1_PARCELA+E1_TIPO
+        SE1->(DbGoTo(nRecnoDel))
+        aAdd(aTitulosReceber, {"E1_FILIAL",  SE1->E1_FILIAL         ,   Nil})
+        aAdd(aTitulosReceber, {"E1_NUM",     SE1->E1_NUM            ,   Nil})
+        aAdd(aTitulosReceber, {"E1_PREFIXO", SE1->E1_PREFIXO        ,   Nil})
+        aAdd(aTitulosReceber, {"E1_PARCELA", SE1->E1_PARCELA        ,   Nil})
+        aAdd(aTitulosReceber, {"E1_TIPO",    SE1->E1_TIPO           ,   Nil})
+        aAdd(aTitulosReceber, {"E1_CCUSTO", cCCMENSA,   Nil})
+    Endif
+    //Inicia o controle de transação
+    Begin Transaction
+        //Chama a rotina automática
+        lMsErroAuto := .F.
+        MSExecAuto({|x,y| FINA040(x,y)}, aTitulosReceber, nOpc )
+        
+        //Se houve erro, mostra o erro ao usuário e desarma a transação
+        If lMsErroAuto
+            MostraErro()
+            DisarmTransaction()
+            lRet := .F.
+            IF nOpc == 3
+                While __lSx8
+                    RollBackSX8()
+                EndDo
+            Endif    
+        Else
+            IF nOpc == 3
+                While __lSx8
+                    ConfirmSx8()
+                EndDo
+            Endif
+        EndIf
+    //Finaliza a transação
+    End Transaction
+
+Return lRet
+
+User Function GetID(cTabela,nIndice,cCampo,cChaveComplementar)
+    Local cRet  as char
+	Local aArea as array
+
+    Default cTabela             := ""
+    Default nIndice             := 1
+    Default cCampo              := ""
+    Default cChaveComplementar  := ""
+
+	aArea := (cTabela)->(GetArea())
+    cRet    :=  GetSxeNum(cTabela,cCampo)
+
+    DbSelectArea(cTabela)
+    DbSetOrder(nIndice)
+
+    While .T.
+        IF DbSeek(FWxFilial(cTabela) + cChaveComplementar + cRet )
+            ConfirmSX8()
+            cRet   :=  GetSxeNum(cTabela,cCampo)
+        Else
+            Exit
+        EndIF
+    EndDo
+
+	RestArea(aArea)
+
+Return cRet
+
+Static Function GetAnuidade(lLiquidado,cChaveCliente ,aTitulos)
+    Local cQry
+    Local _cAlias
+    Local nPosLiquida
+    
+    Default lLiquidado := .F.
+    Default aTitulos   := {}
+
+    cQry := " SELECT R_E_C_N_O_,E1_NUMLIQ,E1_SALDO,E1_DECRESC "+CRLF
+	cQry += " FROM "+RetSQLName("SE1") + CRLF
+	cQry += " WHERE D_E_L_E_T_ <>  '*'  AND E1_FILIAL = '"+FwxFilial("SE1")+"' "+CRLF
+    cQry += " AND E1_CLIENTE + E1_LOJA = '"+cChaveCliente+"' "+CRLF
+    if SE1->(FieldPos("E1_XABASE")) > 0
+        cQry += " AND E1_XABASE = '"+cCompetencia+"' "+CRLF    
+    EndIF 
+    IF lLiquidado
+       cQry += " AND E1_NUMLIQ <> ' ' "+CRLF
+       cQry += " AND E1_PREFIXO = 'M"+Right(cValToChar( cCompetencia ),2)+"' "+CRLF
+    Else//Pego titulo que gerou a liquidação
+        cQry += " AND E1_PREFIXO = 'A"+Right(cValToChar( cCompetencia ),2)+"' "+CRLF
+        cQry += " AND E1_PARCELA = '"+StrZero(1,TamSx3('E1_PARCELA')[1]) +"' "+CRLF    
+        cQry += " AND E1_SALDO > 0 "+CRLF
+    Endif
+    //E1_XMBASE para mês de competência 
+    //E1_XABASE para ano de competência 
+
+    _cAlias := MPSysOpenQuery(cQry)
+	aTitulos := {}
+    While !(_cAlias)->(Eof())
+        //nValor      += (_cAlias)->E1_SALDO
+        //nDesconto   += (_cAlias)->E1_DECRESC
+        if ( nPosLiquida := aScan(aTitulos,{|x| x[4] == (_cAlias)->E1_NUMLIQ  }) ) > 0
+            aTitulos[nPosLiquida,2] +=(_cAlias)->E1_SALDO
+            aTitulos[nPosLiquida,3] +=(_cAlias)->E1_DECRESC
+        Else
+            AaDd(aTitulos,{(_cAlias)->R_E_C_N_O_,(_cAlias)->E1_SALDO,(_cAlias)->E1_DECRESC,(_cAlias)->E1_NUMLIQ} )
+        EndIF    
+        (_cAlias)->(DbSkip())
+	EnddO
+	(_cAlias)->(DbCloseArea())
+
+Return (Len(aTitulos) > 0 )
+
+Static Function ProcessamentoParcela(ncParcelaRecno,cPrefixo,cNumero,nValor,nQuantidadeParcelas,nOpc,nDesconto)
+    Local nX        :=  0
+    Local aCab      :=  {}
+    Local aItens    :=  {}
+    Local cFiltro   :=  ""  //filtro quem conterá os títulos que serão liquidados gerado com base no array aTitOri
+    Local aTitOri   :=  {}      
+    Local nMoeda    :=  1
+    Local cTipoLiq  
+    Local lRet      := .T.
+    Local nValorDecrecimo,nValorSaldoDecrecimo 
+    //Local cNatureza := ""//20101 MV_NATUREZ
+    Local cErro     := ""
+    Local cCliente
+    Local cLoja    
+    Local nValortotal       
+    Local dData
+
+    Private lMsErroAuto     := .F.
+    Private lAutoErrNoFile  := .T.
+
+    Default nOpc        := 3
+    Default nDesconto   := 0
+
+    SE1->(DbGoTo(ncParcelaRecno))
+    //Inicia o controle de transação
+    
+    Begin Transaction
+        IF nOpc == 3
+            nValorDecrecimo      := SE1->E1_DECRESC
+            nValorSaldoDecrecimo := SE1->E1_SDDECRE
+            RecLock("SE1",.F.)
+            SE1->E1_DECRESC := 0
+            SE1->E1_SDDECRE := 0
+            SE1->(MsUnlock())
+            
+            cCliente    := SE1->E1_CLIENTE
+            cLoja       := SE1->E1_LOJA
+            cTipoLiq    := SE1->E1_TIPO
+            nValortotal := nValor * nQuantidadeParcelas
+
+            IF Empty(cNatureza)
+                cNatureza := SE1->E1_NATUREZ
+                SA1->(DbSetOrder(1))
+                SA1->(DbSeek(FwxFilial("SA1") + SE1->(E1_CLIENTE + E1_LOJA) ))
+                IF Empty(cNatureza)
+                    cNatureza := SA1->A1_NATUREZ
+                Endif
+            EndIF
+            
+            if Empty(cNatureza)
+                FWAlertError("Para geração de Mensalidade é obrigatório o uso de natureza, verifique o cadastro do cliente ou digite no campo Natureza.","Valida Natureza")
+                Return .F.
+            Endif
+
+            Aadd(aTitOri,{;
+                        SE1->E1_FILIAL ,; //E1_FILIAL
+                        SE1->E1_PREFIXO ,; //E1_PREFIXO
+                        SE1->E1_NUM ,; //E1_NUM
+                        SE1->E1_PARCELA ,; //E1_PARCELA
+                        SE1->E1_TIPO ,; //E1_TIPO
+                        SE1->E1_CLIENTE ,; //E1_CLIENTE
+                        SE1->E1_LOJA ;  //E1_LOJA
+            })
+
+            nValor := Round(nValor,TamSx3("E1_VALOR")[2])
+            
+            For nX := 1 To nQuantidadeParcelas
+                nValortotal -= nValor
+                if nQuantidadeParcelas == nX .And. nValortotal != 0
+                    nValor += nValortotal
+                EndIf
+                cParcela := StrZero(nX,TamSx3("E1_PARCELA")[1])
+                dData    := GetVencimento( cParcela )
+                Aadd(aItens,{;
+                            {"E1_PREFIXO"   , cPrefixo },;
+                            {'E1_NUM'       , cNumero },;
+                            {'E1_PARCELA'   ,  cParcela },;
+                            {'E1_VENCTO'    , dData },;
+                            {'E1_VENCREA'   , DataValida(dData,.t.) },;
+                            {'E1_XABASE'    , cCompetencia },;
+                            {'E1_XTPAR'     , nQuantidadeParcelas   },;
+                            {'E1_VLCRUZ'    , nValor } })
+            Next 
+
+            //Filtro do Usuario
+            cFiltro := " ("
+
+            For nX := 1 To Len(aTitOri)
+                If nX > 1
+                    cFiltro += " .Or. "
+                EndIf
+                cFiltro += " ("
+                cFiltro += " E1_FILIAL == '" + aTitOri[nX][1] + "' .And. "
+                cFiltro += " E1_PREFIXO == '" + aTitOri[nX][2] + "' .And. E1_NUM == '" + aTitOri[nX][3] + "' .And. "
+                cFiltro += " E1_PARCELA == '" + aTitOri[nX][4] + "' .And. E1_TIPO == '" + aTitOri[nX][5] + "' .And. "
+                cFiltro += " E1_CLIENTE == '" + aTitOri[nX][6] + "' .And. E1_LOJA == '" + aTitOri[nX][7] + "' )"    
+            Next
+            cFiltro += ") .And. E1_SALDO > 0 .And. Empty(E1_NUMLIQ) "
+
+            //Array do processo automatico (aAutoCab)
+            aCab:=  {   {"cCondicao"    ,""                     },;
+                        {"cNatureza"    ,cNatureza              },;
+                        {"E1_TIPO"      ,cTipoLiq               },;
+                        {"cCliente"     ,cCliente               },;
+                        {"cLoja"        ,cLoja                  },;
+                        {"nMoeda"       ,nMoeda                 };
+                    }
+        EndIf            
+    
+        //Chama a rotina automática
+        lMsErroAuto := .F.
+        //MSExecAuto({|x,y| FINA040(x,y)}, aTitulosReceber, nOpc )
+        if nOpc == 3
+            Fina460(,aCab , aItens ,nOpc , cFiltro)    
+        Else    
+            FINA460(,,, nOpc,, SE1->E1_NUMLIQ ) 
+        EndIf    
+        //Se houve erro, mostra o erro ao usuário e desarma a transação
+        If lMsErroAuto
+            //Reposiciono no titulo em questão e devolvo o valor do decrescimo.
+            SE1->(DbGoTo(ncParcelaRecno))
+            RecLock("SE1",.F.)
+            SE1->E1_DECRESC := nValorDecrecimo     
+            SE1->E1_SDDECRE := nValorSaldoDecrecimo
+            SE1->(MsUnlock())
+            
+            aLog := GetAutoGRLog()
+            //MostraErro()
+            aEval(aLog,{|aLog| cErro +=  aLog + CRLF})
+            
+            FWAlertError(cErro,"Erro")
+            DisarmTransaction()
+            lRet := .F.
+        Else    
+            if nOpc == 3
+                SE1->(DbSetOrder(2)) //-E1_FILIAL+E1_CLIENTE+E1_LOJA+E1_PREFIXO+E1_NUM+E1_PARCELA+E1_TIPO
+                SE1->(DbSeek(FwxFilial("SE1")+ SE1->(E1_CLIENTE+E1_LOJA) + cPrefixo + cNumero + StrZero(1,TamSx3("E1_PARCELA")[1]) + cTipoLiq ))
+                While SE1->(E1_FILIAL+E1_CLIENTE+E1_LOJA+E1_PREFIXO+E1_NUM+E1_TIPO ) == FwxFilial("SE1") + cCliente + cLoja + cPrefixo + cNumero + cTipoLiq
+                    RecLock("SE1",.F.)
+                    SE1->E1_XABASE  :=  cCompetencia         
+                    SE1->E1_XTPAR   :=  nQuantidadeParcelas  
+                    SE1->E1_CCUSTO  :=  cCCMENSA
+                    SE1->(MsUnlock())
+                    SE1->(DbSkip())
+                EndDo    
+            Else
+                
+            EndiF    
+        EndIf
+    End Transaction
+
+Return lRet
+
+
+Static Function GetVencimento(cParcela)//,lAnuidade)
+    Local dRet
+    //---------------------------------------------------
+    // Regra do vencimento. 
+    // Quando informar dia do vencimento, será usado o dia informado + o numero da parcela para incrementar o mes.
+    // Quando informar 0 no dia do vencimento, será usada a data de vencimento, sendo que para a 1 parcela ira usar
+    // a data completa, e apartir da 2 parcela, será somado o mes.
+    //---------------------------------------------------
+
+    if nDiaVencimento > 0
+        dRet := StoD( cValToChar(Year(dDataBase)) + StrZero(Month(dDataBase),2) + StrZero(nDiaVencimento,2) )
+        dRet := MonthSum(dRet, Val(cParcela) )
+    Else
+        dRet := dDataVencimento
+        if Val(cParcela) > 1
+            dRet := MonthSum(dRet, Val(cParcela) - 1 )
+        Endif
+    Endif    
+
+Return dRet        

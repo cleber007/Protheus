@@ -1,0 +1,60 @@
+#Include "Protheus.ch"
+#Include "RwMake.ch"
+#Include "TopConn.ch"
+#Include "FWMVCDef.ch"
+
+/*/{Protheus.doc} FINA010
+	(PE da natureza (FINA010) em MVC)
+
+	@type function
+	@author Vitor Ribeiro - vitor.ribeiro@wikitec.com.br (Consultoria Wikitec)
+	@since 14/06/2022
+
+	@param a_Param, array, contém as informações do MVC
+	/*/
+User Function FINA010()
+
+	Local _aParam := PARAMIXB
+
+	Local _lIsGrid := .F.
+
+	Local _oObjeto := Nil
+
+	Local _cIdPonto := ""
+	Local _cIdModel := ""
+
+	Local _xReturn := .T.
+
+	// Se tiver os parâmetros
+	If _aParam <> NIL
+		_oObjeto := _aParam[1]
+
+		_cIdPonto := _aParam[2]
+		_cIdModel := _aParam[3]
+
+		_lIsGrid := Len(_aParam) > 3
+	EndIf
+
+	// Após a gravação total do modelo e dentro da transação.
+	If _cIdPonto == "MODELCOMMITTTS"
+		// Se tiver a integração da natureza com Flash Expense
+		If WK_Generico():GetConteudo("EXON_PARAM_INTEGRACA","INCATE","") == "SED"
+			// Se tiver o campo
+			If SED->(FieldPos("ED_XSTEXO")) > 0
+				RecLock("SED",.F.)
+					SED->ED_XSTEXO := "2"
+				SED->(MsUnlock())
+			EndIf
+
+			// Se tiver o campo
+			If SED->(FieldPos("ED_XINEXO")) > 0
+				// Se integra com Flash Expense
+				If SED->ED_XINEXO == "1"
+					// Integra Flash Expense
+					U_EXONP10(SED->(Recno()))
+				EndIf
+			EndIf
+		EndIf
+	EndIf
+
+Return _xReturn
